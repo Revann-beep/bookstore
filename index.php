@@ -1,3 +1,5 @@
+<!--test update-->
+
 <?php
 session_start();
 require 'auth/connection.php';
