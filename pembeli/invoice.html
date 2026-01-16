@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Invoice - Sari Anggrek</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100">
+
+<div class="flex min-h-screen">
+
+  <!-- Sidebar -->
+  <aside class="w-64 bg-white shadow-lg p-6">
+    <h1 class="text-2xl font-bold text-teal-500 mb-10">SARI<br>ANGGREK</h1>
+    <nav class="space-y-3">
+      <a href="Dashbord-pembeli.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-teal-50">Dashboard</a>
+      <a href="halaman-pesanan.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-teal-400 to-teal-500 text-white">Pesanan</a>
+      <a href="halaman-keranjang.html" class="pl-10 text-gray-500 block">Keranjang</a>
+      <a href="invoice.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-teal-50">Status</a>
+      <a href="pesan.php" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-teal-50">Chat</a>
+      <a href="report.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-teal-50">Laporan</a>
+      <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-teal-50">My Account</a>
+      <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-red-50">Sign Out</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="flex-1 p-8">
+
+    <!-- Topbar -->
+    <div class="flex justify-between items-center mb-10">
+      <div class="flex items-center gap-4 w-1/2">
+        <input type="text" placeholder="Search Here" class="w-full px-5 py-3 rounded-xl shadow focus:outline-none" />
+        <button class="p-3 bg-white rounded-xl shadow">⚙️</button>
+        <button class="p-3 bg-teal-400 text-white rounded-xl shadow">🔔</button>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="text-right">
+          <p class="font-semibold">Pembeli</p>
+          <p class="text-sm text-gray-500">@nurhayatulfadilla</p>
+        </div>
+        <img src="https://i.pravatar.cc/100" class="w-10 h-10 rounded-full" />
+      </div>
+    </div>
+
+    <h2 class="text-3xl font-bold text-center mb-12">Invoice</h2>
+
+    <!-- Invoice Card -->
+    <div class="max-w-3xl mx-auto bg-white rounded-3xl shadow-xl p-8 space-y-6">
+
+      <!-- Header -->
+      <div class="grid grid-cols-4 font-semibold text-center border-b pb-3">
+        <div>No</div>
+        <div>Merek</div>
+        <div>Qty</div>
+        <div>Harga</div>
+      </div>
+
+      <!-- Item -->
+      <div class="grid grid-cols-4 text-center items-center">
+        <div>1</div>
+        <div>IPAS</div>
+        <div>1</div>
+        <div>Rp 15.000</div>
+      </div>
+
+      <!-- Total -->
+      <div class="flex justify-between border-t pt-4">
+        <p class="font-semibold">Total Harga</p>
+        <p class="font-bold text-teal-500">Rp 15.000</p>
+      </div>
+
+      <!-- Transfer -->
+      <div class="flex justify-between">
+        <p class="font-semibold">Transfer</p>
+        <p class="font-bold">Rp 20.000</p>
+      </div>
+
+      <!-- Bukti -->
+      <div class="flex justify-between items-center">
+        <p class="font-semibold">Bukti</p>
+        <div class="w-20 h-20 border rounded-lg flex items-center justify-center text-gray-400 text-sm">Image</div>
+      </div>
+
+    </div>
+
+    <!-- Actions -->
+    <div class="flex justify-center gap-6 mt-10">
+      <button class="flex items-center gap-3 bg-gradient-to-r from-teal-400 to-teal-500 text-white px-10 py-4 rounded-full shadow hover:scale-105 transition">🖨️ Print</button>
+      <button class="bg-gradient-to-r from-teal-400 to-teal-500 text-white px-10 py-4 rounded-full shadow hover:scale-105 transition">Upload Bukti Pembayaran</button>
+    </div>
+
+    <footer class="text-center text-gray-400 mt-14">@nurhayatulfadilla</footer>
+
+  </main>
+</div>
+
+</body>
+</html>
