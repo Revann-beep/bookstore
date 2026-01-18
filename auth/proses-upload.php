@@ -29,13 +29,22 @@ $path = "../img/bukti/" . $namaFile;
 move_uploaded_file($file['tmp_name'], $path);
 
 /* UPDATE ORDER */
-mysqli_query($conn, "
+$result = mysqli_query($conn, "
   UPDATE orders
   SET bukti_tf = '$namaFile',
       status = 'menunggu_verifikasi'
   WHERE id_order = '$id_order'
     AND id_pembeli = '$id_user'
 ");
+
+if (!$result) {
+    die("Error MySQL: " . mysqli_error($conn));
+}
+
+if (mysqli_affected_rows($conn) == 0) {
+    die("Update gagal: id_order atau id_pembeli tidak cocok");
+}
+
 
 /* REDIRECT BENAR */
 header("Location: ../pembeli/invoice.php?id_order=$id_order");

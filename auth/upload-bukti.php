@@ -6,7 +6,7 @@ $id_user  = $_SESSION['id_user'] ?? null;
 $id_order = $_GET['id_order'] ?? null;
 
 if (!$id_user || !$id_order) {
-    header("Location: status.php");
+    header("Location: ../pembeli/status.php");
     exit;
 }
 ?>
@@ -39,7 +39,7 @@ Upload Bukti Pembayaran
     </button>
 </form>
 
-<a href="invoice.php?id_order=<?= $id_order ?>"
+<a href="../pembeli/invoice.php?id_order=<?= $id_order ?>"
    class="block text-center mt-4 text-gray-500 hover:underline">
    ← Kembali ke Invoice
 </a>

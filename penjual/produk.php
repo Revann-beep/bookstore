@@ -51,237 +51,513 @@ if (isset($_GET['hapus'])) {
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Produk Saya</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produk Saya | Aksara Jiwa</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #6366f1;
+            --primary-dark: #4338ca;
+            --accent: #10b981;
+            --accent-light: #34d399;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+        }
 
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .title-font {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .card-shadow {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .card-shadow:hover {
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            transform: translateY(-4px);
+        }
+
+        .sidebar-link {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-link.active {
+            background: linear-gradient(90deg, rgba(79, 70, 229, 0.1) 0%, rgba(79, 70, 229, 0.05) 100%);
+            color: var(--primary);
+            border-right: 3px solid var(--primary);
+        }
+
+        .sidebar-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 60%;
+            background: var(--primary);
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            color: white;
+            border-radius: 1rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-accent:hover {
+            background: linear-gradient(135deg, #0da271 0%, var(--accent) 100%);
+            transform: translateY(-2px);
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-stock {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-category {
+            background-color: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .search-input:focus {
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .modal-bg {
+            backdrop-filter: blur(8px);
+        }
+    </style>
 </head>
-<body class="bg-slate-100 font-sans">
+<body class="bg-gray-50 min-h-screen">
 
 <div class="flex min-h-screen">
 
 <!-- SIDEBAR -->
-<aside class="w-64 bg-white shadow-lg flex flex-col h-screen">
-
-  <!-- LOGO -->
-  <div class="p-6 flex items-center gap-2 border-b">
-    <div class="w-10 h-10 bg-teal-500 text-white rounded-full flex items-center justify-center font-bold">
-      S
-    </div>
-    <span class="font-bold text-teal-600">SARI ANGREK</span>
-  </div>
-
-  <!-- MENU -->
-  <div class="flex-1 px-4 py-6 space-y-2 text-sm">
-
-    <!-- Dashboard -->
-    <a href="dashboard.php"
-       class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-teal-100 text-gray-700">
-      📊 Dashboard
-    </a>
-
-    <!-- Produk -->
-    <a href="produk.php"
-       class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-teal-100 text-gray-700">
-      📦 Produk
-    </a>
-
-    <!-- Approve -->
-   <div class="border border-gray-200 rounded-lg">
-      <button onclick="toggleApprove()"
-              class="w-full flex items-center justify-between px-4 py-2 text-gray-700 hover:bg-teal-100">
-        <span class="flex items-center gap-3">
-          ✅ Approve
-        </span>
-        <span id="iconApprove">▼</span>
-      </button>
-
-      <div id="approveMenu" class="hidden px-4 pb-2 space-y-2">
-        <a href="approve.php" class="block px-3 py-2 rounded-lg hover:bg-gray-100">
-          Approve
-        </a>
-        <a href="laporan.php" class="block px-3 py-2 rounded-lg hover:bg-gray-100">
-          Laporan
-        </a>
-        <a href="chat.php" class="block px-3 py-2 rounded-lg hover:bg-gray-100">
-          Chat
-        </a>
-        
-      </div>
+<aside class="w-64 bg-white shadow-xl flex flex-col h-screen sticky top-0">
+    <!-- LOGO -->
+    <div class="p-6 flex items-center gap-3 border-b border-gray-100">
+        <div class="w-12 h-12 gradient-bg text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-lg">
+            <i class="fas fa-book-open"></i>
+        </div>
+        <div>
+            <span class="font-bold text-xl text-gray-800 title-font">Aksara Jiwa</span>
+            <p class="text-xs text-gray-500">Penjual Dashboard</p>
+        </div>
     </div>
 
-    <!-- My Account -->
-    <a href="akun_saya.php"
-       class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-teal-100 text-gray-700">
-      👤 My Account
-    </a>
+    <!-- MENU -->
+    <div class="flex-1 px-4 py-6 space-y-1">
+        <!-- Dashboard -->
+        <a href="dashboard.php"
+           class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
+           <i class="fas fa-chart-line w-5 text-center"></i>
+           <span>Dashboard</span>
+        </a>
 
-    <!-- Sign Out -->
-    <a href="../auth/logout.php"
-       class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-teal-100 text-red-500">
-      🔒 Sign Out
-    </a>
+        <!-- Produk (Active) -->
+        <a href="produk.php"
+           class="sidebar-link active flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
+           <i class="fas fa-box-open w-5 text-center"></i>
+           <span>Produk Saya</span>
+        </a>
 
-  </div>
+        <!-- Approve -->
+        <div class="border border-gray-100 rounded-lg mt-2">
+            <button onclick="toggleApprove()"
+                    class="w-full flex items-center justify-between px-4 py-3 text-gray-700 hover:bg-indigo-50 rounded-lg">
+                <span class="flex items-center gap-3">
+                    <i class="fas fa-check-circle w-5 text-center"></i>
+                    <span>Approval</span>
+                </span>
+                <span id="iconApprove" class="transform transition-transform">▼</span>
+            </button>
 
-  <!-- HELP (paling bawah) -->
-  <div class="px-4 py-4 border-t">
-    <a href="help.php"
-       class="flex items-center gap-3 text-gray-500 hover:text-teal-600">
-      ❓ Help
-    </a>
-  </div>
+            <div id="approveMenu" class="hidden pl-12 pr-4 pb-2 space-y-2 mt-2">
+                <a href="approve.php" class="block px-3 py-2 rounded-lg hover:bg-gray-100 text-sm text-gray-600 hover:text-gray-900">
+                    Approve Pesanan
+                </a>
+                <a href="laporan.php" class="block px-3 py-2 rounded-lg hover:bg-gray-100 text-sm text-gray-600 hover:text-gray-900">
+                    Laporan Penjualan
+                </a>
+                <a href="chat.php" class="block px-3 py-2 rounded-lg hover:bg-gray-100 text-sm text-gray-600 hover:text-gray-900">
+                    Chat Pelanggan
+                </a>
+            </div>
+        </div>
 
+        <!-- My Account -->
+        <a href="akun_saya.php"
+           class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
+           <i class="fas fa-user-circle w-5 text-center"></i>
+           <span>Akun Saya</span>
+        </a>
+
+        <!-- Sign Out -->
+        <div class="pt-4 mt-4 border-t border-gray-100">
+            <a href="../auth/logout.php"
+               class="flex items-center gap-3 px-4 py-3 rounded-lg text-red-500 hover:bg-red-50">
+               <i class="fas fa-sign-out-alt w-5 text-center"></i>
+               <span>Keluar</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- HELP -->
+    <div class="px-4 py-4 border-t border-gray-100">
+        <a href="help.php"
+           class="flex items-center gap-3 text-gray-500 hover:text-indigo-600">
+           <i class="fas fa-question-circle"></i>
+           <span class="text-sm">Bantuan & Dukungan</span>
+        </a>
+        <div class="mt-3 text-xs text-gray-400 px-1">
+            <p>© 2024 Aksara Jiwa</p>
+            <p>Versi 2.1.0</p>
+        </div>
+    </div>
 </aside>
 
-
-<!-- MAIN -->
-<main class="flex-1 p-8">
-
+<!-- MAIN CONTENT -->
+<main class="flex-1 p-6 md:p-8">
     <!-- HEADER -->
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold text-gray-800">Produk Saya</h2>
-        <a href="../auth/add_buku.php"
-           class="bg-teal-500 hover:bg-teal-600 text-white px-5 py-2 rounded-xl font-semibold">
-            + Tambah Produk
-        </a>
-    </div>
-
-    <!-- SEARCH -->
-    <form method="GET" class="mb-6">
-        <input type="text" name="search"
-               value="<?= htmlspecialchars($search) ?>"
-               placeholder="Cari nama buku..."
-               class="w-80 px-4 py-2 rounded-xl shadow outline-none">
-    </form>
-
-    <!-- LIST PRODUK -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-
-    <?php if (mysqli_num_rows($produk) == 0): ?>
-        <p class="text-gray-500">Produk belum ada.</p>
-    <?php endif; ?>
-
-    <?php while ($row = mysqli_fetch_assoc($produk)) :
-        $margin = $row['harga'] - $row['modal'];
-        $keuntungan = $margin * $row['stok'];
-    ?>
-        <div class="bg-white rounded-2xl shadow p-5 flex flex-col">
-
-    <!-- GAMBAR PRODUK -->
-    <div class="mb-4">
-        <?php if (!empty($row['gambar']) && file_exists("../img/produk/" . $row['gambar'])): ?>
-            <img src="../img/produk/<?= htmlspecialchars($row['gambar']) ?>"
-                 alt="<?= htmlspecialchars($row['nama_buku']) ?>"
-                 class="w-full h-48 object-cover rounded-xl">
-        <?php else: ?>
-            <div class="w-full h-48 bg-gray-200 rounded-xl flex items-center justify-center text-gray-500">
-                Tidak ada gambar
+    <div class="mb-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800 title-font">Produk Saya</h1>
+                <p class="text-gray-600 mt-2">Kelola dan pantau produk Anda di satu tempat</p>
             </div>
-        <?php endif; ?>
-    </div>
-
-
-            <h3 class="font-bold text-lg mb-1"><?= htmlspecialchars($row['nama_buku']) ?></h3>
-            <p class="text-sm text-gray-500 mb-2">
-                Kategori: <?= $row['nama_kategori'] ?? '-' ?>
-            </p>
-
-            <div class="text-sm space-y-1 mb-4">
-                <p>Stok: <strong><?= $row['stok'] ?></strong></p>
-                <p>Harga: Rp<?= number_format($row['harga']) ?></p>
-                <p>Modal: Rp<?= number_format($row['modal']) ?></p>
-                <p>Margin: Rp<?= number_format($margin) ?></p>
-                <p class="text-green-600 font-semibold">
-                    Keuntungan: Rp<?= number_format($keuntungan) ?>
-                </p>
-            </div>
-
-            <p class="text-sm text-gray-600 mb-4">
-                <?= nl2br(htmlspecialchars($row['deskripsi'])) ?>
-            </p>
-
-            <!-- AKSI -->
-            <div class="mt-auto flex gap-2">
-                <a href="../auth/edit_buku.php?id=<?= $row['id_produk'] ?>"
-                   class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded text-center">
-                   Edit
-                </a>
-
-                <?php if ($row['stok'] == 0): ?>
-                    <a href="?hapus=<?= $row['id_produk'] ?>"
-                       onclick="return confirm('Yakin hapus produk?')"
-                       class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded text-center">
-                       Hapus
-                    </a>
-                <?php else: ?>
-                    <button 
-    onclick="hapusProduk(<?= $row['id_produk'] ?>)"
-    class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded text-center">
-    Hapus
-</button>
-
-                <?php endif; ?>
-            </div>
-
+            <a href="../auth/add_buku.php"
+               class="btn-primary px-6 py-3 rounded-xl font-semibold inline-flex items-center gap-2 whitespace-nowrap">
+                <i class="fas fa-plus"></i>
+                Tambah Produk Baru
+            </a>
         </div>
-    <?php endwhile; ?>
 
+        <!-- STATS BAR -->
+        <?php
+            $totalProduk = mysqli_num_rows($produk);
+            mysqli_data_seek($produk, 0);
+            
+            $totalStok = 0;
+            $totalKeuntungan = 0;
+            while($row = mysqli_fetch_assoc($produk)) {
+                $margin = $row['harga'] - $row['modal'];
+                $keuntungan = $margin * $row['stok'];
+                $totalStok += $row['stok'];
+                $totalKeuntungan += $keuntungan;
+            }
+            mysqli_data_seek($produk, 0);
+        ?>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <div class="stats-card p-5">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm opacity-90">Total Produk</p>
+                        <h3 class="text-2xl font-bold mt-1"><?= $totalProduk ?></h3>
+                    </div>
+                    <i class="fas fa-boxes text-2xl opacity-80"></i>
+                </div>
+            </div>
+            
+            <div class="bg-white card-shadow p-5 rounded-xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Total Stok</p>
+                        <h3 class="text-2xl font-bold text-gray-800 mt-1"><?= $totalStok ?></h3>
+                    </div>
+                    <i class="fas fa-layer-group text-2xl text-indigo-500"></i>
+                </div>
+            </div>
+            
+            <div class="bg-white card-shadow p-5 rounded-xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Perkiraan Keuntungan</p>
+                        <h3 class="text-2xl font-bold text-gray-800 mt-1">Rp<?= number_format($totalKeuntungan) ?></h3>
+                    </div>
+                    <i class="fas fa-coins text-2xl text-green-500"></i>
+                </div>
+            </div>
+        </div>
     </div>
 
+    <!-- SEARCH & FILTER -->
+    <div class="bg-white card-shadow rounded-xl p-5 mb-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex-1 relative">
+                <form method="GET">
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" name="search"
+                               value="<?= htmlspecialchars($search) ?>"
+                               placeholder="Cari produk berdasarkan nama buku..."
+                               class="search-input w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-indigo-400">
+                        <?php if($search): ?>
+                            <a href="produk.php" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                </form>
+            </div>
+            <div class="flex items-center gap-2">
+                <button class="px-4 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 flex items-center gap-2">
+                    <i class="fas fa-filter"></i>
+                    Filter
+                </button>
+                <button class="px-4 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 flex items-center gap-2">
+                    <i class="fas fa-sort"></i>
+                    Urutkan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRODUCT LIST -->
+    <?php if (mysqli_num_rows($produk) == 0): ?>
+        <div class="bg-white card-shadow rounded-xl p-8 text-center">
+            <i class="fas fa-box-open text-4xl text-gray-300 mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-700 mb-2">Belum ada produk</h3>
+            <p class="text-gray-500 mb-6">Mulai dengan menambahkan produk pertama Anda</p>
+            <a href="../auth/add_buku.php" class="btn-primary px-6 py-3 rounded-xl font-semibold inline-flex items-center gap-2">
+                <i class="fas fa-plus"></i>
+                Tambah Produk Pertama
+            </a>
+        </div>
+    <?php else: ?>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <?php while ($row = mysqli_fetch_assoc($produk)) :
+                $margin = $row['harga'] - $row['modal'];
+                $keuntungan = $margin * $row['stok'];
+                $marginPercentage = $row['modal'] > 0 ? round(($margin / $row['modal']) * 100) : 0;
+            ?>
+                <div class="bg-white card-shadow rounded-2xl overflow-hidden border border-gray-100">
+                    <!-- IMAGE SECTION -->
+                    <div class="relative">
+                        <?php if (!empty($row['gambar']) && file_exists("../img/produk/" . $row['gambar'])): ?>
+                            <img src="../img/produk/<?= htmlspecialchars($row['gambar']) ?>"
+                                 alt="<?= htmlspecialchars($row['nama_buku']) ?>"
+                                 class="w-full h-56 object-cover">
+                        <?php else: ?>
+                            <div class="w-full h-56 bg-gradient-to-r from-indigo-50 to-purple-50 flex flex-col items-center justify-center text-gray-400">
+                                <i class="fas fa-book text-4xl mb-3"></i>
+                                <p>Gambar tidak tersedia</p>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <!-- STATUS BADGES -->
+                        <div class="absolute top-3 left-3 flex gap-2">
+                            <span class="badge badge-stock">
+                                <i class="fas fa-cube text-xs mr-1"></i>
+                                Stok: <?= $row['stok'] ?>
+                            </span>
+                            <?php if($row['nama_kategori']): ?>
+                                <span class="badge badge-category">
+                                    <?= $row['nama_kategori'] ?>
+                                </span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- CONTENT SECTION -->
+                    <div class="p-5">
+                        <h3 class="font-bold text-lg text-gray-800 mb-2 truncate"><?= htmlspecialchars($row['nama_buku']) ?></h3>
+                        
+                        <p class="text-gray-600 text-sm mb-4 line-clamp-2">
+                            <?= nl2br(htmlspecialchars(substr($row['deskripsi'], 0, 100))) ?>...
+                        </p>
+                        
+                        <!-- PRICE INFO -->
+                        <div class="space-y-3 mb-5">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-500">Harga Jual</span>
+                                <span class="font-bold text-lg text-gray-800">Rp<?= number_format($row['harga']) ?></span>
+                            </div>
+                            
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-500">Modal</span>
+                                <span class="text-gray-700">Rp<?= number_format($row['modal']) ?></span>
+                            </div>
+                            
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-500">Margin</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-semibold text-green-600">Rp<?= number_format($margin) ?></span>
+                                    <span class="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">
+                                        +<?= $marginPercentage ?>%
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="pt-3 border-t border-gray-100">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-gray-500">Keuntungan Potensial</span>
+                                    <span class="font-bold text-green-600">Rp<?= number_format($keuntungan) ?></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- ACTION BUTTONS -->
+                        <div class="flex gap-3">
+                            <a href="../auth/edit_buku.php?id=<?= $row['id_produk'] ?>"
+                               class="flex-1 btn-accent py-3 rounded-xl text-center font-medium flex items-center justify-center gap-2">
+                                <i class="fas fa-edit"></i>
+                                Edit
+                            </a>
+                            
+                            <?php if ($row['stok'] == 0): ?>
+                                <a href="?hapus=<?= $row['id_produk'] ?>"
+                                   onclick="return hapusProduk(<?= $row['id_produk'] ?>)"
+                                   class="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl text-center font-medium flex items-center justify-center gap-2 transition-all duration-300">
+                                    <i class="fas fa-trash-alt"></i>
+                                    Hapus
+                                </a>
+                            <?php else: ?>
+                                <button onclick="hapusProduk(<?= $row['id_produk'] ?>)"
+                                        class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl text-center font-medium flex items-center justify-center gap-2 cursor-not-allowed opacity-70"
+                                        title="Produk hanya dapat dihapus jika stok 0">
+                                    <i class="fas fa-trash-alt"></i>
+                                    Hapus
+                                </button>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            <?php endwhile; ?>
+        </div>
+        
+        <!-- PAGINATION (Placeholder) -->
+        <div class="mt-8 flex justify-center">
+            <div class="flex items-center gap-2">
+                <button class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="w-10 h-10 flex items-center justify-center rounded-lg bg-indigo-500 text-white">1</button>
+                <button class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50">2</button>
+                <button class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50">3</button>
+                <button class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    <?php endif; ?>
 </main>
 </div>
-<?php if (isset($_SESSION['alert'])): ?>
+
 <script>
-Swal.fire({
-    icon: '<?= $_SESSION['alert']['type'] ?>',
-    title: '<?= $_SESSION['alert']['title'] ?>',
-    text: '<?= $_SESSION['alert']['text'] ?>',
-    confirmButtonColor: '#14b8a6'
-});
+    function toggleApprove() {
+        const menu = document.getElementById('approveMenu');
+        const icon = document.getElementById('iconApprove');
+        
+        menu.classList.toggle('hidden');
+        icon.classList.toggle('rotate-180');
+    }
 
+    function hapusProduk(id) {
+        Swal.fire({
+            title: 'Konfirmasi Hapus Produk',
+            text: 'Apakah Anda yakin ingin menghapus produk ini? Tindakan ini tidak dapat dibatalkan.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            customClass: {
+                popup: 'rounded-2xl'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = '?hapus=' + id;
+            }
+        });
+        return false;
+    }
 
-function hapusProduk(id) {
+    <?php if (isset($_SESSION['success'])): ?>
     Swal.fire({
-        title: 'Yakin hapus produk?',
-        text: 'Data yang dihapus tidak bisa dikembalikan!',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#9ca3af',
-        confirmButtonText: 'Ya, hapus',
-        cancelButtonText: 'Batal'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            window.location.href = '?hapus=' + id;
-        }
+        icon: 'success',
+        title: 'Berhasil!',
+        text: '<?= $_SESSION['success'] ?>',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        background: '#f0fdf4',
+        iconColor: '#10b981',
+        color: '#065f46'
     });
-}
+    <?php unset($_SESSION['success']); endif; ?>
 
-<?php if (isset($_SESSION['success'])): ?>
-<script>
-Swal.fire({
-    icon: 'success',
-    title: 'Berhasil',
-    text: '<?= $_SESSION['success'] ?>',
-    confirmButtonColor: '#14b8a6'
-});
-</script>
-<?php unset($_SESSION['success']); endif; ?>
+    <?php if (isset($_SESSION['error'])): ?>
+    Swal.fire({
+        icon: 'error',
+        title: 'Gagal!',
+        text: '<?= $_SESSION['error'] ?>',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        background: '#fef2f2',
+        iconColor: '#ef4444',
+        color: '#7f1d1d'
+    });
+    <?php unset($_SESSION['error']); endif; ?>
 
-<?php if (isset($_SESSION['error'])): ?>
-<script>
-Swal.fire({
-    icon: 'error',
-    title: 'Gagal',
-    text: '<?= $_SESSION['error'] ?>',
-    confirmButtonColor: '#ef4444'
-});
+    <?php if (isset($_SESSION['alert'])): ?>
+    Swal.fire({
+        icon: '<?= $_SESSION['alert']['type'] ?>',
+        title: '<?= $_SESSION['alert']['title'] ?>',
+        text: '<?= $_SESSION['alert']['text'] ?>',
+        confirmButtonColor: '#4f46e5'
+    });
+    <?php unset($_SESSION['alert']); endif; ?>
 </script>
-<?php unset($_SESSION['error']); endif; ?>
-
-</script>
-<?php unset($_SESSION['alert']); endif; ?>
 
 </body>
 </html>

@@ -54,86 +54,87 @@ $stat = mysqli_fetch_assoc($statResult);
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grafik Laporan - Penjual</title>
+    <title>Grafik Laporan | Aksara Jiwa</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        .active-link { background-color: #e6fffa; color: #0d9488; font-weight: 600; }
-        .hover-effect:hover { background-color: #f0fdfa; transform: translateX(5px); transition: all 0.2s; }
-        .stat-card { transition: transform 0.3s, box-shadow 0.3s; }
-        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
-<body class="flex min-h-screen bg-gray-50">
+<body class="bg-gray-50">
+<div class="flex min-h-screen">
     <!-- SIDEBAR -->
-    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col">
+    <aside class="w-64 bg-white shadow-lg flex flex-col fixed h-full">
+        <!-- LOGO -->
         <div class="p-6 border-b">
-            <h2 class="text-lg font-semibold text-gray-800">📚 Toko Buku</h2>
-            <p class="text-sm text-gray-500 mt-1">Penjual Dashboard</p>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-book text-white"></i>
+                </div>
+                <div>
+                    <h2 class="font-bold text-gray-800">Aksara Jiwa</h2>
+                    <p class="text-xs text-gray-500">Analytics Dashboard</p>
+                </div>
+            </div>
         </div>
 
-        <nav class="flex-1 p-4 space-y-1">
-            <a href="dashboard.php" class="flex items-center gap-3 px-4 py-3 rounded-lg hover-effect text-gray-700">
-                📊 Dashboard
-            </a>
-            
-            <a href="produk.php" class="flex items-center gap-3 px-4 py-3 rounded-lg hover-effect text-gray-700">
-                📦 Produk
-            </a>
-            
-            <div class="mt-4 mb-2">
-                <p class="text-xs font-semibold text-gray-500 px-4 mb-2">MANAJEMEN ORDER</p>
-                <a href="approve.php" class="flex items-center gap-3 px-4 py-3 rounded-lg hover-effect text-gray-700">
-                    ✅ Approve Order
+        <!-- MENU -->
+        <div class="flex-1 overflow-y-auto">
+            <nav class="p-4 space-y-1">
+                <a href="dashboard.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
+                    <i class="fas fa-chart-line w-5"></i> Dashboard
                 </a>
-                <a href="laporan.php" class="flex items-center gap-3 px-4 py-3 rounded-lg hover-effect text-gray-700">
-                    📑 Laporan Tabel
+                <a href="produk.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
+                    <i class="fas fa-box-open w-5"></i> Produk
                 </a>
-                <a href="grafik.php?bulan=<?= $bulan ?>&tahun=<?= $tahun ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg active-link">
-                    📈 Laporan Grafik
+                <a href="approve.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
+                    <i class="fas fa-check-circle w-5"></i> Approve
                 </a>
-                <a href="chat.php" class="flex items-center gap-3 px-4 py-3 rounded-lg hover-effect text-gray-700">
-                    💬 Chat
+                <a href="laporan.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
+                    <i class="fas fa-file-alt w-5"></i> Laporan
                 </a>
-            </div>
-            
-            <div class="mt-6 mb-2">
-                <p class="text-xs font-semibold text-gray-500 px-4 mb-2">AKUN</p>
-                <a href="akun_saya.php" class="flex items-center gap-3 px-4 py-3 rounded-lg hover-effect text-gray-700">
-                    👤 My Account
+                <a href="grafik.php" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-indigo-50 text-indigo-600 font-medium">
+                    <i class="fas fa-chart-bar w-5"></i> Grafik
                 </a>
-                <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-3 rounded-lg hover-effect text-red-500">
-                    🔒 Sign Out
+                <a href="akun_saya.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
+                    <i class="fas fa-user-circle w-5"></i> Akun Saya
                 </a>
-            </div>
-        </nav>
+            </nav>
+        </div>
 
-        <div class="p-4 border-t">
-            <a href="help.php" class="flex items-center gap-3 text-gray-500 hover:text-teal-600">
-                ❓ Help & Support
+        <!-- LOGOUT -->
+        <div class="p-4 border-t mt-auto">
+            <a href="../auth/logout.php" class="flex items-center gap-3 text-red-500 hover:text-red-600">
+                <i class="fas fa-sign-out-alt"></i> Keluar
             </a>
         </div>
     </aside>
 
     <!-- MAIN CONTENT -->
-    <main class="flex-1 p-6">
+    <main class="flex-1 ml-64 p-6 overflow-y-auto h-screen">
         <!-- HEADER -->
-        <div class="mb-6">
-            <h1 class="text-2xl font-bold text-gray-800 mb-2">📈 Grafik Penjualan Bulanan</h1>
-            <p class="text-gray-600">Analisis performa penjualan bulan <?= date('F', mktime(0, 0, 0, $bulan, 10)) ?> <?= $tahun ?></p>
+        <div class="mb-8">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">Analisis Grafik</h1>
+                    <p class="text-gray-600 mt-1">Visualisasi performa penjualan bulan <?= date('F', mktime(0, 0, 0, $bulan, 10)) ?> <?= $tahun ?></p>
+                </div>
+                <a href="laporan.php?bulan=<?= $bulan ?>&tahun=<?= $tahun ?>" 
+                   class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 flex items-center gap-2">
+                    <i class="fas fa-table"></i> Tabel Laporan
+                </a>
+            </div>
         </div>
 
         <!-- FILTER -->
-        <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
-            <form method="GET" class="flex flex-wrap gap-3 items-center">
-                <div class="flex items-center gap-2">
-                    <label class="text-sm text-gray-600">Bulan:</label>
-                    <select name="bulan" class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+        <div class="bg-white rounded-xl shadow p-5 mb-6">
+            <form method="GET" class="flex items-center gap-4">
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Bulan</label>
+                    <select name="bulan" class="w-40 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                         <?php for ($m=1; $m<=12; $m++): ?>
                             <option value="<?= sprintf('%02d', $m) ?>" <?= $bulan == sprintf('%02d', $m) ? 'selected' : '' ?>>
                                 <?= date('F', mktime(0,0,0,$m,10)) ?>
@@ -142,82 +143,67 @@ $stat = mysqli_fetch_assoc($statResult);
                     </select>
                 </div>
                 
-                <div class="flex items-center gap-2">
-                    <label class="text-sm text-gray-600">Tahun:</label>
-                    <select name="tahun" class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Tahun</label>
+                    <select name="tahun" class="w-32 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                         <?php for ($y=2023; $y<=date('Y'); $y++): ?>
                             <option value="<?= $y ?>" <?= $tahun == $y ? 'selected' : '' ?>><?= $y ?></option>
                         <?php endfor; ?>
                     </select>
                 </div>
                 
-                <button type="submit" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
-                    Terapkan Filter
+                <button type="submit" class="mt-6 px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2">
+                    <i class="fas fa-filter"></i> Terapkan
                 </button>
-                
-                <a href="laporan.php?bulan=<?= $bulan ?>&tahun=<?= $tahun ?>" 
-                   class="ml-auto px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition flex items-center gap-2">
-                    ← Kembali ke Tabel
-                </a>
             </form>
         </div>
 
         <!-- STATISTIK BULANAN -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div class="stat-card bg-white rounded-xl shadow-sm p-5 border-l-4 border-blue-500">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-5 rounded-xl">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-gray-500">Total Transaksi</p>
-                        <p class="text-2xl font-bold text-gray-800"><?= $stat['total_transaksi'] ?? 0 ?></p>
+                        <p class="text-sm opacity-90">Total Transaksi</p>
+                        <p class="text-2xl font-bold mt-1"><?= $stat['total_transaksi'] ?? 0 ?></p>
                     </div>
-                    <div class="p-3 bg-blue-100 rounded-lg">
-                        <span class="text-blue-600 text-xl">🛒</span>
-                    </div>
+                    <i class="fas fa-shopping-cart text-xl opacity-80"></i>
                 </div>
             </div>
             
-            <div class="stat-card bg-white rounded-xl shadow-sm p-5 border-l-4 border-green-500">
+            <div class="bg-white p-5 rounded-xl shadow">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-gray-500">Total Penjualan</p>
-                        <p class="text-2xl font-bold text-gray-800">Rp <?= number_format($stat['total_penjualan_bulan'] ?? 0) ?></p>
+                        <p class="text-sm text-gray-600">Total Penjualan</p>
+                        <p class="text-2xl font-bold text-gray-800 mt-1">Rp <?= number_format($stat['total_penjualan_bulan'] ?? 0) ?></p>
                     </div>
-                    <div class="p-3 bg-green-100 rounded-lg">
-                        <span class="text-green-600 text-xl">💰</span>
-                    </div>
+                    <i class="fas fa-money-bill-wave text-xl text-green-500"></i>
                 </div>
             </div>
             
-            <div class="stat-card bg-white rounded-xl shadow-sm p-5 border-l-4 border-purple-500">
+            <div class="bg-white p-5 rounded-xl shadow">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-gray-500">Total Modal</p>
-                        <p class="text-2xl font-bold text-gray-800">Rp <?= number_format($stat['total_modal_bulan'] ?? 0) ?></p>
+                        <p class="text-sm text-gray-600">Total Modal</p>
+                        <p class="text-2xl font-bold text-gray-800 mt-1">Rp <?= number_format($stat['total_modal_bulan'] ?? 0) ?></p>
                     </div>
-                    <div class="p-3 bg-purple-100 rounded-lg">
-                        <span class="text-purple-600 text-xl">📊</span>
-                    </div>
+                    <i class="fas fa-calculator text-xl text-purple-500"></i>
                 </div>
             </div>
             
-            <div class="stat-card bg-white rounded-xl shadow-sm p-5 border-l-4 border-teal-500">
+            <div class="bg-gradient-to-r from-green-500 to-green-600 text-white p-5 rounded-xl">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-gray-500">Total Keuntungan</p>
-                        <p class="text-2xl font-bold <?= ($stat['total_keuntungan_bulan'] ?? 0) >= 0 ? 'text-teal-600' : 'text-red-600' ?>">
-                            Rp <?= number_format($stat['total_keuntungan_bulan'] ?? 0) ?>
-                        </p>
+                        <p class="text-sm opacity-90">Total Keuntungan</p>
+                        <p class="text-2xl font-bold mt-1">Rp <?= number_format($stat['total_keuntungan_bulan'] ?? 0) ?></p>
                     </div>
-                    <div class="p-3 bg-teal-100 rounded-lg">
-                        <span class="text-teal-600 text-xl">📈</span>
-                    </div>
+                    <i class="fas fa-chart-line text-xl opacity-80"></i>
                 </div>
             </div>
         </div>
 
         <!-- GRAFIK UTAMA -->
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-semibold text-gray-800 mb-4">Perkembangan Penjualan Harian</h2>
+        <div class="bg-white rounded-xl shadow p-6 mb-6">
+            <h2 class="text-lg font-bold text-gray-800 mb-4">Perkembangan Penjualan Harian</h2>
             <div class="h-80">
                 <canvas id="chartPenjualan"></canvas>
             </div>
@@ -225,174 +211,183 @@ $stat = mysqli_fetch_assoc($statResult);
 
         <!-- GRAFIK PERBANDINGAN -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-white rounded-xl shadow-sm p-6">
-                <h2 class="text-lg font-semibold text-gray-800 mb-4">Perbandingan Modal vs Penjualan</h2>
+            <div class="bg-white rounded-xl shadow p-6">
+                <h2 class="text-lg font-bold text-gray-800 mb-4">Perbandingan Modal vs Penjualan</h2>
                 <div class="h-64">
                     <canvas id="chartPerbandingan"></canvas>
                 </div>
             </div>
             
-            <div class="bg-white rounded-xl shadow-sm p-6">
-                <h2 class="text-lg font-semibold text-gray-800 mb-4">Keuntungan Harian</h2>
+            <div class="bg-white rounded-xl shadow p-6">
+                <h2 class="text-lg font-bold text-gray-800 mb-4">Keuntungan Harian</h2>
                 <div class="h-64">
                     <canvas id="chartKeuntungan"></canvas>
                 </div>
             </div>
         </div>
+
+        <?php if (empty($labels)): ?>
+            <div class="mt-6 bg-white rounded-xl shadow p-8 text-center">
+                <i class="fas fa-chart-line text-4xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Tidak ada data</h3>
+                <p class="text-gray-500">Belum ada transaksi pada periode ini</p>
+            </div>
+        <?php endif; ?>
     </main>
+</div>
 
-    <script>
-        // Grafik Utama - Line Chart
-        const ctx1 = document.getElementById('chartPenjualan').getContext('2d');
-        new Chart(ctx1, {
-            type: 'line',
-            data: {
-                labels: <?= json_encode($labels) ?>,
-                datasets: [{
-                    label: 'Penjualan Harian',
+<script>
+    <?php if (!empty($labels)): ?>
+    // Grafik Utama - Line Chart
+    const ctx1 = document.getElementById('chartPenjualan').getContext('2d');
+    new Chart(ctx1, {
+        type: 'line',
+        data: {
+            labels: <?= json_encode($labels) ?>,
+            datasets: [{
+                label: 'Penjualan Harian',
+                data: <?= json_encode($dataPenjualan) ?>,
+                borderColor: '#4f46e5',
+                backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Rp ' + context.raw.toLocaleString('id-ID');
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'Rp ' + value.toLocaleString('id-ID');
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Grafik Perbandingan - Bar Chart
+    const ctx2 = document.getElementById('chartPerbandingan').getContext('2d');
+    new Chart(ctx2, {
+        type: 'bar',
+        data: {
+            labels: <?= json_encode($labels) ?>,
+            datasets: [
+                {
+                    label: 'Modal',
+                    data: <?= json_encode($dataModal) ?>,
+                    backgroundColor: '#8b5cf6',
+                    borderColor: '#7c3aed',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Penjualan',
                     data: <?= json_encode($dataPenjualan) ?>,
-                    borderColor: '#10b981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return 'Rp ' + context.raw.toLocaleString('id-ID');
-                            }
+                    backgroundColor: '#10b981',
+                    borderColor: '#059669',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': Rp ' + context.raw.toLocaleString('id-ID');
                         }
                     }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return 'Rp ' + value.toLocaleString('id-ID');
-                            }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'Rp ' + value.toLocaleString('id-ID');
                         }
                     }
                 }
             }
-        });
+        }
+    });
 
-        // Grafik Perbandingan - Bar Chart
-        const ctx2 = document.getElementById('chartPerbandingan').getContext('2d');
-        new Chart(ctx2, {
-            type: 'bar',
-            data: {
-                labels: <?= json_encode($labels) ?>,
-                datasets: [
-                    {
-                        label: 'Modal',
-                        data: <?= json_encode($dataModal) ?>,
-                        backgroundColor: 'rgba(139, 92, 246, 0.7)',
-                        borderColor: '#8b5cf6',
-                        borderWidth: 1
-                    },
-                    {
-                        label: 'Penjualan',
-                        data: <?= json_encode($dataPenjualan) ?>,
-                        backgroundColor: 'rgba(16, 185, 129, 0.7)',
-                        borderColor: '#10b981',
-                        borderWidth: 1
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.dataset.label + ': Rp ' + context.raw.toLocaleString('id-ID');
-                            }
+    // Grafik Keuntungan - Line Chart
+    const ctx3 = document.getElementById('chartKeuntungan').getContext('2d');
+    new Chart(ctx3, {
+        type: 'line',
+        data: {
+            labels: <?= json_encode($labels) ?>,
+            datasets: [{
+                label: 'Keuntungan Harian',
+                data: <?= json_encode($dataKeuntungan) ?>,
+                borderColor: (context) => {
+                    const value = context.dataset.data[context.dataIndex];
+                    return value >= 0 ? '#10b981' : '#ef4444';
+                },
+                backgroundColor: (context) => {
+                    const value = context.dataset.data[context.dataIndex];
+                    return value >= 0 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)';
+                },
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: (context) => {
+                    const value = context.dataset.data[context.dataIndex];
+                    return value >= 0 ? '#10b981' : '#ef4444';
+                }
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.raw;
+                            const status = value >= 0 ? 'Untung' : 'Rugi';
+                            return status + ': Rp ' + Math.abs(value).toLocaleString('id-ID');
                         }
                     }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return 'Rp ' + value.toLocaleString('id-ID');
-                            }
+                }
+            },
+            scales: {
+                y: {
+                    ticks: {
+                        callback: function(value) {
+                            return 'Rp ' + value.toLocaleString('id-ID');
                         }
                     }
                 }
             }
-        });
-
-        // Grafik Keuntungan - Line Chart
-        const ctx3 = document.getElementById('chartKeuntungan').getContext('2d');
-        new Chart(ctx3, {
-            type: 'line',
-            data: {
-                labels: <?= json_encode($labels) ?>,
-                datasets: [{
-                    label: 'Keuntungan Harian',
-                    data: <?= json_encode($dataKeuntungan) ?>,
-                    borderColor: '#0d9488',
-                    backgroundColor: (context) => {
-                        const bgColor = [];
-                        const data = context.chart.data.datasets[0].data;
-                        data.forEach(value => {
-                            bgColor.push(value >= 0 ? 'rgba(13, 148, 136, 0.2)' : 'rgba(239, 68, 68, 0.2)');
-                        });
-                        return bgColor;
-                    },
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: (context) => {
-                        const index = context.dataIndex;
-                        const value = context.dataset.data[index];
-                        return value >= 0 ? '#0d9488' : '#ef4444';
-                    }
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const value = context.raw;
-                                const status = value >= 0 ? 'Untung' : 'Rugi';
-                                return status + ': Rp ' + Math.abs(value).toLocaleString('id-ID');
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        ticks: {
-                            callback: function(value) {
-                                return 'Rp ' + value.toLocaleString('id-ID');
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    </script>
+        }
+    });
+    <?php endif; ?>
+</script>
 </body>
 </html>

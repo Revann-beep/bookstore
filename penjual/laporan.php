@@ -58,81 +58,88 @@ $data = mysqli_query($conn, $sql);
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan - Penjual</title>
+    <title>Laporan | Aksara Jiwa</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .active-link { background-color: #e6fffa; color: #0d9488; font-weight: 600; }
-        .hover-effect:hover { background-color: #f0fdfa; transform: translateX(5px); transition: all 0.2s; }
-        .table-row:hover { background-color: #f9fafb; }
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
-<body class="flex min-h-screen bg-gray-50">
+<body class="bg-gray-50">
+<div class="flex min-h-screen">
     <!-- SIDEBAR -->
-    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col">
+    <aside class="w-64 bg-white shadow-lg flex flex-col fixed h-full">
+        <!-- LOGO -->
         <div class="p-6 border-b">
-            <h2 class="text-lg font-semibold text-gray-800">📚 Toko Buku</h2>
-            <p class="text-sm text-gray-500 mt-1">Penjual Dashboard</p>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-book text-white"></i>
+                </div>
+                <div>
+                    <h2 class="font-bold text-gray-800">Aksara Jiwa</h2>
+                    <p class="text-xs text-gray-500">Penjual Dashboard</p>
+                </div>
+            </div>
         </div>
 
-        <nav class="flex-1 p-4 space-y-1">
-            <a href="dashboard.php" class="flex items-center gap-3 px-4 py-3 rounded-lg hover-effect text-gray-700">
-                📊 Dashboard
-            </a>
-            
-            <a href="produk.php" class="flex items-center gap-3 px-4 py-3 rounded-lg hover-effect text-gray-700">
-                📦 Produk
-            </a>
-            
-            <div class="mt-4 mb-2">
-                <p class="text-xs font-semibold text-gray-500 px-4 mb-2">MANAJEMEN ORDER</p>
-                <a href="approve.php" class="flex items-center gap-3 px-4 py-3 rounded-lg hover-effect text-gray-700">
-                    ✅ Approve Order
+        <!-- MENU -->
+        <div class="flex-1 overflow-y-auto">
+            <nav class="p-4 space-y-1">
+                <a href="dashboard.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
+                    <i class="fas fa-chart-line w-5"></i> Dashboard
                 </a>
-                <a href="laporan.php" class="flex items-center gap-3 px-4 py-3 rounded-lg active-link">
-                    📑 Laporan
+                <a href="produk.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
+                    <i class="fas fa-box-open w-5"></i> Produk
                 </a>
-                <a href="chat.php" class="flex items-center gap-3 px-4 py-3 rounded-lg hover-effect text-gray-700">
-                    💬 Chat
+                <a href="approve.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
+                    <i class="fas fa-check-circle w-5"></i> Approve
                 </a>
-            </div>
-            
-            <div class="mt-6 mb-2">
-                <p class="text-xs font-semibold text-gray-500 px-4 mb-2">AKUN</p>
-                <a href="admin.php" class="flex items-center gap-3 px-4 py-3 rounded-lg hover-effect text-gray-700">
-                    👤 My Account
+                <a href="laporan.php" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-indigo-50 text-indigo-600 font-medium">
+                    <i class="fas fa-file-alt w-5"></i> Laporan
                 </a>
-                <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-3 rounded-lg hover-effect text-red-500">
-                    🔒 Sign Out
+                <a href="chat.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
+                    <i class="fas fa-comments w-5"></i> Chat
                 </a>
-            </div>
-        </nav>
+                <a href="akun_saya.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
+                    <i class="fas fa-user-circle w-5"></i> Akun Saya
+                </a>
+                <a href="help.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
+                    <i class="fas fa-question-circle w-5"></i> Bantuan
+                </a>
+            </nav>
+        </div>
 
-        <div class="p-4 border-t">
-            <a href="help.php" class="flex items-center gap-3 text-gray-500 hover:text-teal-600">
-                ❓ Help & Support
+        <!-- LOGOUT -->
+        <div class="p-4 border-t mt-auto">
+            <a href="../auth/logout.php" class="flex items-center gap-3 text-red-500 hover:text-red-600">
+                <i class="fas fa-sign-out-alt"></i> Keluar
             </a>
         </div>
     </aside>
 
     <!-- MAIN CONTENT -->
-    <main class="flex-1 p-6">
+    <main class="flex-1 ml-64 p-6 overflow-y-auto h-screen">
         <!-- HEADER -->
-        <div class="mb-6">
-            <h1 class="text-2xl font-bold text-gray-800 mb-2">📑 Laporan Pembelian</h1>
-            <p class="text-gray-600">Filter dan kelola laporan penjualan bulanan</p>
+        <div class="mb-8">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">Laporan Penjualan</h1>
+                    <p class="text-gray-600 mt-1">Analisis dan pantau performa penjualan Anda</p>
+                </div>
+                <div class="text-sm text-gray-500">
+                    Periode: <?= date('F Y', strtotime($tahun.'-'.$bulan.'-01')) ?>
+                </div>
+            </div>
         </div>
 
         <!-- FILTER & ACTION -->
-        <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
-            <form method="GET" class="flex flex-wrap gap-3 items-center">
+        <div class="bg-white rounded-xl shadow p-5 mb-6">
+            <form method="GET" class="flex flex-wrap gap-4 items-center">
                 <div class="flex items-center gap-2">
                     <label class="text-sm text-gray-600">Bulan:</label>
-                    <select name="bulan" class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                    <select name="bulan" class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                         <?php for ($m=1; $m<=12; $m++): ?>
                             <option value="<?= sprintf('%02d', $m) ?>" <?= $bulan == sprintf('%02d', $m) ? 'selected' : '' ?>>
                                 <?= date('F', mktime(0,0,0,$m,10)) ?>
@@ -143,66 +150,75 @@ $data = mysqli_query($conn, $sql);
                 
                 <div class="flex items-center gap-2">
                     <label class="text-sm text-gray-600">Tahun:</label>
-                    <select name="tahun" class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                    <select name="tahun" class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                         <?php for ($y=2023; $y<=date('Y'); $y++): ?>
                             <option value="<?= $y ?>" <?= $tahun == $y ? 'selected' : '' ?>><?= $y ?></option>
                         <?php endfor; ?>
                     </select>
                 </div>
                 
-                <button type="submit" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
-                    Terapkan Filter
+                <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                    <i class="fas fa-filter mr-2"></i> Terapkan Filter
                 </button>
                 
                 <div class="flex gap-2 ml-auto">
                     <a href="?download=csv&bulan=<?= $bulan ?>&tahun=<?= $tahun ?>" 
                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2">
-                        📥 Download CSV
+                        <i class="fas fa-download"></i> Download CSV
                     </a>
                     <a href="grafik.php?bulan=<?= $bulan ?>&tahun=<?= $tahun ?>" 
-                       class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
-                        📈 Lihat Grafik
+                       class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2">
+                        <i class="fas fa-chart-bar"></i> Lihat Grafik
                     </a>
                 </div>
             </form>
         </div>
 
         <!-- TABLE -->
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="bg-white rounded-xl shadow overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="min-w-full">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="p-3 text-left text-sm font-semibold text-gray-700">Kode Pesanan</th>
-                            <th class="p-3 text-left text-sm font-semibold text-gray-700">Nama Buku</th>
-                            <th class="p-3 text-left text-sm font-semibold text-gray-700">Qty</th>
-                            <th class="p-3 text-left text-sm font-semibold text-gray-700">Bukti TF</th>
-                            <th class="p-3 text-left text-sm font-semibold text-gray-700">Metode Bayar</th>
-                            <th class="p-3 text-left text-sm font-semibold text-gray-700">Modal</th>
-                            <th class="p-3 text-left text-sm font-semibold text-gray-700">Penjualan</th>
-                            <th class="p-3 text-left text-sm font-semibold text-gray-700">Keuntungan</th>
+                            <th class="p-4 text-left font-semibold text-gray-700">Kode Pesanan</th>
+                            <th class="p-4 text-left font-semibold text-gray-700">Nama Buku</th>
+                            <th class="p-4 text-left font-semibold text-gray-700">Qty</th>
+                            <th class="p-4 text-left font-semibold text-gray-700">Bukti TF</th>
+                            <th class="p-4 text-left font-semibold text-gray-700">Metode Bayar</th>
+                            <th class="p-4 text-left font-semibold text-gray-700">Modal</th>
+                            <th class="p-4 text-left font-semibold text-gray-700">Penjualan</th>
+                            <th class="p-4 text-left font-semibold text-gray-700">Keuntungan</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         <?php if (mysqli_num_rows($data) > 0): ?>
                             <?php while ($row = mysqli_fetch_assoc($data)): ?>
-                                <tr class="table-row">
-                                    <td class="p-3 text-sm text-gray-800"><?= htmlspecialchars($row['kode_pesanan']) ?></td>
-                                    <td class="p-3 text-sm text-gray-800"><?= htmlspecialchars($row['nama_buku']) ?></td>
-                                    <td class="p-3 text-sm text-gray-800"><?= $row['qty'] ?></td>
-                                    <td class="p-3 text-sm text-gray-800"><?= htmlspecialchars($row['bukti_tf']) ?></td>
-                                    <td class="p-3 text-sm text-gray-800"><?= htmlspecialchars($row['metode_pembayaran']) ?></td>
-                                    <td class="p-3 text-sm text-gray-800">Rp <?= number_format($row['total_modal']) ?></td>
-                                    <td class="p-3 text-sm text-gray-800">Rp <?= number_format($row['total_penjualan']) ?></td>
-                                    <td class="p-3 text-sm font-semibold <?= $row['total_keuntungan'] >= 0 ? 'text-green-600' : 'text-red-600' ?>">
-                                        Rp <?= number_format($row['total_keuntungan']) ?>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="p-4">
+                                        <span class="font-medium text-gray-800"><?= htmlspecialchars($row['kode_pesanan']) ?></span>
+                                    </td>
+                                    <td class="p-4 text-gray-800"><?= htmlspecialchars($row['nama_buku']) ?></td>
+                                    <td class="p-4">
+                                        <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                                            <?= $row['qty'] ?>
+                                        </span>
+                                    </td>
+                                    <td class="p-4 text-gray-600"><?= htmlspecialchars($row['bukti_tf']) ?></td>
+                                    <td class="p-4 text-gray-600"><?= htmlspecialchars($row['metode_pembayaran']) ?></td>
+                                    <td class="p-4 text-gray-700">Rp <?= number_format($row['total_modal']) ?></td>
+                                    <td class="p-4 text-gray-800 font-medium">Rp <?= number_format($row['total_penjualan']) ?></td>
+                                    <td class="p-4">
+                                        <span class="font-bold <?= $row['total_keuntungan'] >= 0 ? 'text-green-600' : 'text-red-600' ?>">
+                                            Rp <?= number_format($row['total_keuntungan']) ?>
+                                        </span>
                                     </td>
                                 </tr>
                             <?php endwhile; ?>
                         <?php else: ?>
                             <tr>
                                 <td colspan="8" class="p-8 text-center text-gray-500">
-                                    Tidak ada data laporan untuk periode ini
+                                    <i class="fas fa-inbox text-3xl mb-3"></i>
+                                    <p>Tidak ada data laporan untuk periode ini</p>
                                 </td>
                             </tr>
                         <?php endif; ?>
@@ -221,20 +237,21 @@ $data = mysqli_query($conn, $sql);
                 <div class="flex gap-2">
                     <a href="?page=<?= max(1, $page-1) ?>&bulan=<?= $bulan ?>&tahun=<?= $tahun ?>" 
                        class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition <?= $page <= 1 ? 'opacity-50 cursor-not-allowed' : '' ?>">
-                        ← Previous
+                        <i class="fas fa-chevron-left mr-1"></i> Previous
                     </a>
                     
-                    <div class="flex items-center px-4 py-2 bg-teal-50 text-teal-700 rounded-lg font-medium">
+                    <div class="flex items-center px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg font-medium">
                         Halaman <?= $page ?> dari <?= $totalPage ?>
                     </div>
                     
                     <a href="?page=<?= min($totalPage, $page+1) ?>&bulan=<?= $bulan ?>&tahun=<?= $tahun ?>" 
                        class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition <?= $page >= $totalPage ? 'opacity-50 cursor-not-allowed' : '' ?>">
-                        Next →
+                        Next <i class="fas fa-chevron-right ml-1"></i>
                     </a>
                 </div>
             </div>
         <?php endif; ?>
     </main>
+</div>
 </body>
 </html>

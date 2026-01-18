@@ -82,14 +82,10 @@ if ($chatWith > 0) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat dengan Pembeli</title>
+    <title>Chat | Aksara Jiwa</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-        }
         .chat-container {
             height: calc(100vh - 140px);
         }
@@ -100,8 +96,8 @@ if ($chatWith > 0) {
             border-radius: 18px 18px 4px 18px;
         }
         .active-chat {
-            background-color: #f0fdfa;
-            border-left: 4px solid #0d9488;
+            background-color: #eef2ff;
+            border-left: 4px solid #4f46e5;
         }
         .scrollbar-thin::-webkit-scrollbar {
             width: 4px;
@@ -113,60 +109,85 @@ if ($chatWith > 0) {
             background: #888;
             border-radius: 2px;
         }
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
     <!-- SIDEBAR -->
-    <div class="fixed left-0 top-0 h-screen w-64 bg-white shadow-lg">
+    <aside class="w-64 bg-white shadow-lg flex flex-col fixed h-full">
+        <!-- LOGO -->
         <div class="p-6 border-b">
-            <h1 class="text-xl font-bold text-teal-700">📚 Toko Buku</h1>
-            <p class="text-sm text-gray-500 mt-1">Penjual: <?= htmlspecialchars($penjual_nama) ?></p>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-book text-white"></i>
+                </div>
+                <div>
+                    <h2 class="font-bold text-gray-800">Aksara Jiwa</h2>
+                    <p class="text-xs text-gray-500">Penjual Dashboard</p>
+                </div>
+            </div>
         </div>
 
-        <nav class="p-4 space-y-1">
-            <a href="dashboard.php" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-teal-50">
-                <i class="fas fa-chart-line w-5"></i> Dashboard
-            </a>
-            <a href="produk.php" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-teal-50">
-                <i class="fas fa-box w-5"></i> Produk
-            </a>
-            
-            <div class="my-2">
-                <p class="text-xs font-semibold text-gray-400 px-3 mb-2">ORDER</p>
-                <a href="approve.php" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-teal-50">
+        <!-- MENU -->
+        <div class="flex-1 overflow-y-auto">
+            <nav class="p-4 space-y-1">
+                <a href="dashboard.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
+                    <i class="fas fa-chart-line w-5"></i> Dashboard
+                </a>
+                <a href="produk.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
+                    <i class="fas fa-box-open w-5"></i> Produk
+                </a>
+                <a href="approve.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
                     <i class="fas fa-check-circle w-5"></i> Approve
                 </a>
-                <a href="laporan.php" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-teal-50">
+                <a href="laporan.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
                     <i class="fas fa-file-alt w-5"></i> Laporan
                 </a>
-                <a href="chat.php" class="flex items-center gap-3 px-3 py-2.5 rounded-lg active-chat">
+                <a href="chat.php" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-indigo-50 text-indigo-600 font-medium">
                     <i class="fas fa-comments w-5"></i> Chat
                 </a>
-            </div>
-            
-            <div class="mt-4">
-                <a href="akun_saya.php" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-teal-50">
-                    <i class="fas fa-user-circle w-5"></i> My Account
+                <a href="akun_saya.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
+                    <i class="fas fa-user-circle w-5"></i> Akun Saya
                 </a>
-                <a href="../auth/logout.php" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-500 hover:bg-red-50">
-                    <i class="fas fa-sign-out-alt w-5"></i> Sign Out
+                <a href="help.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
+                    <i class="fas fa-question-circle w-5"></i> Bantuan
                 </a>
-            </div>
-        </nav>
-    </div>
+            </nav>
+        </div>
+
+        <!-- LOGOUT -->
+        <div class="p-4 border-t mt-auto">
+            <a href="../auth/logout.php" class="flex items-center gap-3 text-red-500 hover:text-red-600">
+                <i class="fas fa-sign-out-alt"></i> Keluar
+            </a>
+        </div>
+    </aside>
 
     <!-- MAIN CONTENT -->
     <div class="ml-64 h-screen flex">
         <!-- LIST PEMBELI -->
-        <div class="w-80 border-r bg-white">
-            <div class="p-4 border-b">
-                <h2 class="text-lg font-semibold text-gray-800">💬 Chat Pembeli</h2>
-                <p class="text-sm text-gray-500 mt-1">Pilih pembeli untuk memulai chat</p>
+        <div class="w-80 border-r bg-white shadow-sm">
+            <div class="p-5 border-b">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">Percakapan</h2>
+                        <p class="text-sm text-gray-500 mt-1">Penjual: <?= htmlspecialchars($penjual_nama) ?></p>
+                    </div>
+                    <div class="relative">
+                        <i class="fas fa-circle text-green-500 text-xs"></i>
+                    </div>
+                </div>
             </div>
             
             <div class="overflow-y-auto h-[calc(100vh-120px)] scrollbar-thin">
                 <?php 
-                mysqli_data_seek($inboxQuery, 0); // Reset pointer
+                mysqli_data_seek($inboxQuery, 0);
                 if (mysqli_num_rows($inboxQuery) > 0): 
                     while($row = mysqli_fetch_assoc($inboxQuery)): 
                         $last_msg = $row['last_msg'];
@@ -175,16 +196,23 @@ if ($chatWith > 0) {
                         }
                 ?>
                     <a href="?user=<?= $row['id_user'] ?>" 
-                       class="flex items-center p-3 border-b hover:bg-gray-50 <?= $chatWith == $row['id_user'] ? 'bg-teal-50' : '' ?>">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex justify-between items-start">
-                                <p class="font-medium text-gray-900 truncate"><?= htmlspecialchars($row['nama']) ?></p>
-                                <?php if($row['unread'] > 0): ?>
-                                    <span class="bg-red-500 text-white text-xs px-2 py-1 rounded-full"><?= $row['unread'] ?></span>
-                                <?php endif; ?>
+                       class="flex items-center p-4 border-b hover:bg-gray-50 transition <?= $chatWith == $row['id_user'] ? 'active-chat' : '' ?>">
+                        <div class="relative flex-shrink-0">
+                            <div class="w-12 h-12 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user text-indigo-600"></i>
                             </div>
-                            <p class="text-sm text-gray-500 truncate mt-1"><?= htmlspecialchars($last_msg) ?></p>
-                            <p class="text-xs text-gray-400 mt-1"><?= date('H:i', strtotime($row['last_time'])) ?></p>
+                            <?php if($row['unread'] > 0): ?>
+                                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-2 py-1 rounded-full min-w-[20px] text-center">
+                                    <?= $row['unread'] ?>
+                                </span>
+                            <?php endif; ?>
+                        </div>
+                        <div class="flex-1 min-w-0 ml-3">
+                            <div class="flex justify-between items-start">
+                                <p class="font-semibold text-gray-900 truncate"><?= htmlspecialchars($row['nama']) ?></p>
+                                <p class="text-xs text-gray-400 whitespace-nowrap ml-2"><?= date('H:i', strtotime($row['last_time'])) ?></p>
+                            </div>
+                            <p class="text-sm text-gray-600 truncate mt-1"><?= htmlspecialchars($last_msg) ?></p>
                         </div>
                     </a>
                 <?php 
@@ -192,61 +220,82 @@ if ($chatWith > 0) {
                 else: 
                 ?>
                     <div class="p-8 text-center">
-                        <i class="fas fa-comment-slash text-3xl text-gray-300 mb-3"></i>
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-comment-slash text-2xl text-gray-400"></i>
+                        </div>
                         <p class="text-gray-500">Belum ada percakapan</p>
+                        <p class="text-sm text-gray-400 mt-1">Pembeli akan muncul di sini</p>
                     </div>
                 <?php endif; ?>
             </div>
         </div>
 
         <!-- AREA CHAT -->
-        <div class="flex-1 flex flex-col">
+        <div class="flex-1 flex flex-col bg-white">
             <?php if($chatWith > 0 && !empty($pembeli_nama)): ?>
                 <!-- HEADER CHAT -->
-                <div class="p-4 border-b bg-white flex items-center justify-between">
+                <div class="p-5 border-b bg-white shadow-sm flex items-center justify-between">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
-                            <i class="fas fa-user text-teal-600"></i>
+                        <div class="relative">
+                            <div class="w-12 h-12 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user text-indigo-600 text-lg"></i>
+                            </div>
+                            <span class="online-dot absolute bottom-0 right-0"></span>
                         </div>
                         <div>
-                            <h3 class="font-semibold text-gray-800"><?= htmlspecialchars($pembeli_nama) ?></h3>
-                            <p class="text-xs text-gray-500">Sedang online</p>
+                            <h3 class="font-bold text-gray-800"><?= htmlspecialchars($pembeli_nama) ?></h3>
+                            <p class="text-sm text-gray-500">Sedang online</p>
                         </div>
                     </div>
                     <div class="flex gap-2">
-                        <button class="p-2 text-gray-500 hover:text-teal-600 hover:bg-teal-50 rounded-lg">
+                        <button class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition">
                             <i class="fas fa-phone"></i>
                         </button>
-                        <button class="p-2 text-gray-500 hover:text-teal-600 hover:bg-teal-50 rounded-lg">
+                        <button class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition">
                             <i class="fas fa-video"></i>
+                        </button>
+                        <button class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition">
+                            <i class="fas fa-ellipsis-v"></i>
                         </button>
                     </div>
                 </div>
 
                 <!-- CHAT MESSAGES -->
-                <div class="flex-1 p-4 overflow-y-auto chat-container scrollbar-thin space-y-4 bg-gray-50">
+                <div class="flex-1 p-6 overflow-y-auto chat-container scrollbar-thin space-y-4 bg-gray-50">
                     <?php if(empty($chat)): ?>
                         <div class="h-full flex flex-col items-center justify-center">
-                            <i class="fas fa-comments text-4xl text-gray-300 mb-4"></i>
-                            <p class="text-gray-500">Mulai percakapan dengan <?= htmlspecialchars($pembeli_nama) ?></p>
+                            <div class="w-24 h-24 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-full flex items-center justify-center mb-4">
+                                <i class="fas fa-comments text-3xl text-indigo-500"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-2">Mulai Percakapan</h3>
+                            <p class="text-gray-500 text-center max-w-sm">
+                                Kirim pesan pertama Anda kepada <?= htmlspecialchars($pembeli_nama) ?>
+                            </p>
                         </div>
                     <?php else: ?>
                         <?php foreach($chat as $msg): ?>
                             <?php if($msg['sender_id'] == $penjual_id): ?>
                                 <!-- PESAN PENJUAL -->
                                 <div class="flex justify-end">
-                                    <div class="max-w-md">
-                                        <div class="bg-teal-500 text-white p-4 message-right shadow-sm">
+                                    <div class="max-w-lg">
+                                        <div class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4 message-right shadow">
                                             <?= htmlspecialchars($msg['message']) ?>
                                         </div>
-                                        <p class="text-xs text-gray-500 mt-1 text-right"><?= date('H:i', strtotime($msg['created_at'])) ?></p>
+                                        <div class="flex items-center justify-end gap-2 mt-1">
+                                            <span class="text-xs text-gray-500"><?= date('H:i', strtotime($msg['created_at'])) ?></span>
+                                            <?php if($msg['is_read']): ?>
+                                                <i class="fas fa-check-double text-xs text-green-500"></i>
+                                            <?php else: ?>
+                                                <i class="fas fa-check text-xs text-gray-400"></i>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
                                 </div>
                             <?php else: ?>
                                 <!-- PESAN PEMBELI -->
                                 <div class="flex justify-start">
-                                    <div class="max-w-md">
-                                        <div class="bg-white p-4 message-left border shadow-sm">
+                                    <div class="max-w-lg">
+                                        <div class="bg-white p-4 message-left border shadow">
                                             <?= htmlspecialchars($msg['message']) ?>
                                         </div>
                                         <p class="text-xs text-gray-500 mt-1"><?= date('H:i', strtotime($msg['created_at'])) ?></p>
@@ -258,40 +307,58 @@ if ($chatWith > 0) {
                 </div>
 
                 <!-- INPUT CHAT -->
-                <form method="POST" class="p-4 border-t bg-white">
+                <form method="POST" class="p-5 border-t bg-white shadow-sm">
                     <div class="flex gap-3">
-                        <input type="text" name="pesan" placeholder="Ketik pesan..."
-                               class="flex-1 border border-gray-300 rounded-full px-6 py-3 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                        <button type="button" class="w-12 h-12 flex items-center justify-center text-gray-500 hover:text-indigo-600 hover:bg-gray-100 rounded-full">
+                            <i class="fas fa-paperclip text-xl"></i>
+                        </button>
+                        <button type="button" class="w-12 h-12 flex items-center justify-center text-gray-500 hover:text-indigo-600 hover:bg-gray-100 rounded-full">
+                            <i class="fas fa-image text-xl"></i>
+                        </button>
+                        <input type="text" name="pesan" placeholder="Ketik pesan Anda..."
+                               class="flex-1 border border-gray-300 rounded-full px-5 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                required autofocus>
                         <button type="submit"
-                                class="bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-full font-medium">
-                            <i class="fas fa-paper-plane mr-2"></i> Kirim
+                                class="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-full flex items-center justify-center">
+                            <i class="fas fa-paper-plane text-lg"></i>
                         </button>
                     </div>
                 </form>
 
             <?php else: ?>
                 <!-- DEFAULT VIEW -->
-                <div class="flex-1 flex flex-col items-center justify-center p-8">
-                    <div class="text-center max-w-md">
-                        <div class="w-24 h-24 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <i class="fas fa-comments text-4xl text-teal-500"></i>
+                <div class="flex-1 flex flex-col items-center justify-center p-8 bg-gradient-to-br from-gray-50 to-indigo-50">
+                    <div class="text-center max-w-lg">
+                        <div class="w-32 h-32 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                            <i class="fas fa-comments text-5xl text-indigo-500"></i>
                         </div>
-                        <h3 class="text-xl font-semibold text-gray-800 mb-2">Chat dengan Pembeli</h3>
-                        <p class="text-gray-500 mb-6">Pilih pembeli dari daftar di samping untuk memulai percakapan</p>
-                        <div class="space-y-3 text-sm text-gray-600">
-                            <div class="flex items-center gap-2">
-                                <i class="fas fa-check-circle text-teal-500"></i>
-                                <span>Jawab pertanyaan pembeli dengan cepat</span>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-3">Chat dengan Pembeli</h3>
+                        <p class="text-gray-600 mb-8 text-lg">
+                            Pilih pembeli dari daftar di samping untuk memulai percakapan dan memberikan pelayanan terbaik.
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                            <div class="bg-white p-4 rounded-xl shadow text-center">
+                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                                    <i class="fas fa-headset text-blue-600"></i>
+                                </div>
+                                <p class="font-medium text-gray-800">Dukungan Cepat</p>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <i class="fas fa-check-circle text-teal-500"></i>
-                                <span>Konfirmasi pesanan melalui chat</span>
+                            <div class="bg-white p-4 rounded-xl shadow text-center">
+                                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                                    <i class="fas fa-check-circle text-green-600"></i>
+                                </div>
+                                <p class="font-medium text-gray-800">Konfirmasi Pesanan</p>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <i class="fas fa-check-circle text-teal-500"></i>
-                                <span>Berikan informasi produk</span>
+                            <div class="bg-white p-4 rounded-xl shadow text-center">
+                                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                                    <i class="fas fa-info-circle text-purple-600"></i>
+                                </div>
+                                <p class="font-medium text-gray-800">Informasi Produk</p>
                             </div>
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>
+                            Respon yang cepat meningkatkan kepuasan pelanggan
                         </div>
                     </div>
                 </div>
