@@ -1,3 +1,24 @@
+<?php
+session_start();
+require '../auth/connection.php';
+
+/* ambil data order + item + produk */
+$reportQ = mysqli_query($conn, "
+    SELECT 
+        o.id_order,
+        o.total,
+        o.metode_pembayaran,
+        o.bukti,
+        oi.qty,
+        p.nama_buku
+    FROM orders o
+    JOIN order_items oi ON o.id_order = oi.id_order
+    JOIN produk p ON oi.id_produk = p.id_produk
+    ORDER BY o.created_at DESC
+");
+?>
+
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -79,51 +100,50 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr class="border-b hover:bg-gray-50">
-                                    <td class="py-4 px-4">
-                                        <div class="flex items-center">
-                                            <div class="bg-blue-100 text-blue-800 font-bold w-10 h-10 flex items-center justify-center rounded-lg mr-3">A01</div>
-                                            <span class="font-medium">IPAS</span>
-                                        </div>
-                                    </td>
-                                    <td class="py-4 px-4">
-                                        <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full font-medium">2</span>
-                                    </td>
-                                    <td class="py-4 px-4">
-                                        <button class="text-gray-400 hover:text-blue-500">
-                                            <i class="fas fa-paperclip text-xl"></i>
-                                        </button>
-                                    </td>
-                                    <td class="py-4 px-4">
-                                        <span class="inline-flex items-center bg-green-50 text-green-700 px-3 py-1 rounded-full">
-                                            <i class="fas fa-exchange-alt mr-2"></i>Transfer
-                                        </span>
-                                    </td>
-                                    <td class="py-4 px-4 font-bold text-gray-800">Rp. 30.000</td>
-                                </tr>
-                                <tr class="border-b hover:bg-gray-50">
-                                    <td class="py-4 px-4">
-                                        <div class="flex items-center">
-                                            <div class="bg-green-100 text-green-800 font-bold w-10 h-10 flex items-center justify-center rounded-lg mr-3">A03</div>
-                                            <span class="font-medium">Java</span>
-                                        </div>
-                                    </td>
-                                    <td class="py-4 px-4">
-                                        <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full font-medium">2</span>
-                                    </td>
-                                    <td class="py-4 px-4">
-                                        <button class="text-gray-400 hover:text-blue-500">
-                                            <i class="fas fa-paperclip text-xl"></i>
-                                        </button>
-                                    </td>
-                                    <td class="py-4 px-4">
-                                        <span class="inline-flex items-center bg-green-50 text-green-700 px-3 py-1 rounded-full">
-                                            <i class="fas fa-exchange-alt mr-2"></i>Transfer
-                                        </span>
-                                    </td>
-                                    <td class="py-4 px-4 font-bold text-gray-800">Rp. 30.000</td>
-                                </tr>
-                            </tbody>
+<?php if (mysqli_num_rows($reportQ) == 0): ?>
+<tr>
+  <td colspan="5" class="py-6 text-gray-500">Belum ada data pesanan</td>
+</tr>
+<?php endif; ?>
+
+<?php while ($r = mysqli_fetch_assoc($reportQ)) : ?>
+<tr class="border-b hover:bg-gray-50">
+  <td class="py-4 px-4">
+    <div class="flex items-center">
+      <div class="bg-blue-100 text-blue-800 font-bold w-10 h-10 flex items-center justify-center rounded-lg mr-3">
+        <?= $r['id_order'] ?>
+      </div>
+      <span class="font-medium"><?= htmlspecialchars($r['nama_buku']) ?></span>
+    </div>
+  </td>
+
+  <td class="py-4 px-4">
+    <span class="bg-gray-100 px-3 py-1 rounded-full"><?= $r['qty'] ?></span>
+  </td>
+
+  <td class="py-4 px-4">
+    <?php if ($r['bukti']) : ?>
+      <a href="../img/bukti/<?= $r['bukti'] ?>" target="_blank">
+        <i class="fas fa-paperclip text-blue-500"></i>
+      </a>
+    <?php else : ?>
+      <span class="text-gray-400">-</span>
+    <?php endif; ?>
+  </td>
+
+  <td class="py-4 px-4">
+    <span class="bg-green-50 text-green-700 px-3 py-1 rounded-full">
+      <?= htmlspecialchars($r['metode_pembayaran']) ?>
+    </span>
+  </td>
+
+  <td class="py-4 px-4 font-bold">
+    Rp <?= number_format($r['total'], 0, ',', '.') ?>
+  </td>
+</tr>
+<?php endwhile; ?>
+</tbody>
+
                         </table>
                     </div>
                     

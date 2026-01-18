@@ -4,7 +4,7 @@ require '../auth/connection.php';
 
 // CEGAH AKSES SELAIN SUPER ADMIN
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'super_admin') {
-    header("Location: ../auth/login.php");
+    header("Location: ../login.php");
     exit;
 }
 

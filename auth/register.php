@@ -13,12 +13,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $alamat   = $_POST['alamat'];
     $role     = $_POST['role'];
 
-    // Upload Foto
-    $foto_name = '';
-    if (isset($_FILES['foto']) && $_FILES['foto']['error'] === 0) {
-        $ext = pathinfo($_FILES['foto']['name'], PATHINFO_EXTENSION);
-        $foto_name = uniqid() . '.' . $ext;
-        move_uploaded_file($_FILES['foto']['tmp_name'], 'uploads/' . $foto_name);
+    // Upload image
+    $image_name = '';
+
+    if (isset($_FILES['image']) && $_FILES['image']['error'] === 0) {
+
+        $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+        $ext = strtolower($ext);
+
+        $allowed = ['jpg','jpeg','png','webp','jfif'];
+
+        if (!in_array($ext, $allowed)) {
+            $error = "Format gambar tidak diizinkan";
+        } else {
+
+            // Pastikan folder ada
+            $folder = "../img/profile";
+            if (!is_dir($folder)) {
+                mkdir($folder, 0777, true);
+            }
+
+            $image_name = uniqid() . '.' . $ext;
+
+            // Upload file ke folder
+            if (!move_uploaded_file($_FILES['image']['tmp_name'], $folder . $image_name)) {
+                $error = "Upload gambar gagal (cek permission folder)";
+            }
+        }
     }
 
     // Validasi NIK
@@ -49,9 +70,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Insert ke DB
             $insert = mysqli_query($conn, "
                 INSERT INTO users 
-                (nik, nama, email, password, alamat, role, status, foto)
+                (nik, nama, email, password, alamat, role, status, image)
                 VALUES
-                ('$nik','$nama','$email','$hash','$alamat','$role','offline','$foto_name')
+                ('$nik','$nama','$email','$hash','$alamat','$role','offline','$image_name')
             ");
 
             if ($insert) {
@@ -64,6 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -114,10 +136,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <textarea name="alamat" placeholder="Alamat"
           class="w-full px-4 py-3 rounded-lg bg-white/80 focus:ring-2 focus:ring-green-500"></textarea>
 
-        <!-- FOTO -->
+        <!-- image -->
         <div class="bg-white/80 p-4 rounded-lg">
-          <p class="text-sm font-semibold text-gray-700 mb-2">Upload Foto</p>
-          <input type="file" name="foto" accept="image/*">
+          <p class="text-sm font-semibold text-gray-700 mb-2">Upload image</p>
+          <input type="file" name="image" accept="image/*">
         </div>
 
         <!-- ROLE -->
