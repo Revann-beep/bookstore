@@ -2,80 +2,98 @@
 session_start();
 require '../auth/connection.php';
 
-// CEK LOGIN
-if (!isset($_SESSION['id_user'])) {
+if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'penjual') {
     header("Location: ../index.php");
     exit;
 }
 
-// HANYA PENJUAL YANG BOLEH CHAT
-if ($_SESSION['role'] !== 'penjual') {
-    die("Akses ditolak");
-}
 
-$penjual_id = $_SESSION['id_user'];
+
+$penjual_id   = $_SESSION['id_user'];
 $penjual_nama = $_SESSION['nama'];
 
-// AMBIL DAFTAR PEMBELI YANG PERNAH CHAT
-$inboxQuery = mysqli_query($conn, "
-    SELECT 
-        u.id_user, 
-        u.nama,
-        m.message as last_msg,
-        m.created_at as last_time,
-        (SELECT COUNT(*) FROM messages WHERE receiver_id = '$penjual_id' AND sender_id = u.id_user AND is_read = 0) as unread
-    FROM messages m
-    JOIN users u ON u.id_user = m.sender_id
-    WHERE m.receiver_id = '$penjual_id' AND m.id_message IN (
-        SELECT MAX(id_message) FROM messages WHERE receiver_id = '$penjual_id' GROUP BY sender_id
-    )
-    GROUP BY u.id_user
-    ORDER BY m.created_at DESC
-");
+$chatWith  = (int)($_GET['user'] ?? 0);
+$id_produk = (int)($_GET['id_produk'] ?? 0);
 
-// JIKA PEMBELI DIPILIH
-$chatWith = isset($_GET['user']) ? (int)$_GET['user'] : 0;
-
-// MARK AS READ
-if ($chatWith > 0) {
-    mysqli_query($conn, "UPDATE messages SET is_read = 1 WHERE sender_id = '$chatWith' AND receiver_id = '$penjual_id'");
-}
-
-// KIRIM PESAN
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pesan']) && $chatWith > 0) {
-    $pesan = mysqli_real_escape_string($conn, $_POST['pesan']);
-    mysqli_query($conn, "
-        INSERT INTO messages (sender_id, receiver_id, message)
-        VALUES ('$penjual_id', '$chatWith', '$pesan')
-    ");
-    
-    // Redirect untuk refresh chat
-    header("Location: chat.php?user=$chatWith");
+/* ================== KIRIM PESAN ================== */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $chatWith > 0 && $id_produk > 0) {
+    $pesan = trim($_POST['pesan']);
+    if ($pesan !== '') {
+        mysqli_query($conn, "
+            INSERT INTO messages (sender_id, receiver_id, id_produk, message, is_read, created_at)
+            VALUES ('$penjual_id', '$chatWith', '$id_produk', '$pesan', 0, NOW())
+        ");
+    }
+    header("Location: chat.php?user=$chatWith&id_produk=$id_produk");
     exit;
 }
 
-// AMBIL CHAT JIKA ADA PEMBELI DIPILIH
-$chat = [];
+/* ================== NAMA PEMBELI ================== */
 $pembeli_nama = '';
 if ($chatWith > 0) {
-    $userQuery = mysqli_query($conn, "SELECT nama FROM users WHERE id_user = '$chatWith'");
-    $userData = mysqli_fetch_assoc($userQuery);
-    $pembeli_nama = $userData['nama'] ?? '';
-    
-    $chatQuery = mysqli_query($conn, "
-        SELECT m.*, u.nama as sender_nama 
-        FROM messages m
-        JOIN users u ON u.id_user = m.sender_id
-        WHERE (sender_id='$penjual_id' AND receiver_id='$chatWith')
-           OR (sender_id='$chatWith' AND receiver_id='$penjual_id')
+    $q = mysqli_query($conn, "SELECT nama FROM users WHERE id_user='$chatWith'");
+    if ($r = mysqli_fetch_assoc($q)) {
+        $pembeli_nama = $r['nama'];
+    }
+}
+
+/* ================== MARK AS READ ================== */
+if ($chatWith && $id_produk) {
+    mysqli_query($conn, "
+        UPDATE messages 
+        SET is_read=1
+        WHERE sender_id='$chatWith'
+        AND receiver_id='$penjual_id'
+        AND id_produk='$id_produk'
+    ");
+}
+
+/* ================== CHAT HISTORY ================== */
+$chat = [];
+if ($chatWith && $id_produk) {
+    $qChat = mysqli_query($conn, "
+        SELECT * FROM messages
+        WHERE id_produk='$id_produk'
+        AND (
+            (sender_id='$penjual_id' AND receiver_id='$chatWith')
+            OR
+            (sender_id='$chatWith' AND receiver_id='$penjual_id')
+        )
         ORDER BY created_at ASC
     ");
-    
-    while ($row = mysqli_fetch_assoc($chatQuery)) {
+    while ($row = mysqli_fetch_assoc($qChat)) {
         $chat[] = $row;
     }
 }
+
+$inboxQuery = mysqli_query($conn, "
+    SELECT 
+        u.id_user,
+        u.nama,
+        m.id_produk,
+        m.message AS last_msg,
+        m.created_at,
+        (
+            SELECT COUNT(*) 
+            FROM messages 
+            WHERE receiver_id = '$penjual_id'
+              AND sender_id = u.id_user
+              AND is_read = 0
+        ) AS unread
+    FROM messages m
+    JOIN users u ON u.id_user = m.sender_id
+    WHERE m.receiver_id = '$penjual_id'
+    AND m.id_message IN (
+        SELECT MAX(id_message)
+        FROM messages
+        WHERE receiver_id = '$penjual_id'
+        GROUP BY sender_id, id_produk
+    )
+    ORDER BY m.created_at DESC
+");
+
 ?>
+
 
 <!DOCTYPE html>
 <html lang="id">
@@ -140,6 +158,7 @@ if ($chatWith > 0) {
                 <a href="dashboard.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
                     <i class="fas fa-chart-line w-5"></i> Dashboard
                 </a>
+                
                 <a href="produk.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
                     <i class="fas fa-box-open w-5"></i> Produk
                 </a>
@@ -151,6 +170,9 @@ if ($chatWith > 0) {
                 </a>
                 <a href="chat.php" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-indigo-50 text-indigo-600 font-medium">
                     <i class="fas fa-comments w-5"></i> Chat
+                </a>
+                <a href="admin.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
+                    <i class="fas fa-store w-5"></i> Data Penjual
                 </a>
                 <a href="akun_saya.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
                     <i class="fas fa-user-circle w-5"></i> Akun Saya
@@ -187,7 +209,10 @@ if ($chatWith > 0) {
             
             <div class="overflow-y-auto h-[calc(100vh-120px)] scrollbar-thin">
                 <?php 
-                mysqli_data_seek($inboxQuery, 0);
+                if ($inboxQuery) {
+    mysqli_data_seek($inboxQuery, 0);
+}
+
                 if (mysqli_num_rows($inboxQuery) > 0): 
                     while($row = mysqli_fetch_assoc($inboxQuery)): 
                         $last_msg = $row['last_msg'];
@@ -195,8 +220,10 @@ if ($chatWith > 0) {
                             $last_msg = substr($last_msg, 0, 40) . '...';
                         }
                 ?>
-                    <a href="?user=<?= $row['id_user'] ?>" 
-                       class="flex items-center p-4 border-b hover:bg-gray-50 transition <?= $chatWith == $row['id_user'] ? 'active-chat' : '' ?>">
+                    <a href="?user=<?= $row['id_user'] ?>&id_produk=<?= $row['id_produk'] ?>" 
+   class="flex items-center p-4 border-b hover:bg-gray-50 transition 
+   <?= ($chatWith == $row['id_user'] && $id_produk == $row['id_produk']) ? 'active-chat' : '' ?>">
+
                         <div class="relative flex-shrink-0">
                             <div class="w-12 h-12 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-full flex items-center justify-center">
                                 <i class="fas fa-user text-indigo-600"></i>
@@ -210,7 +237,7 @@ if ($chatWith > 0) {
                         <div class="flex-1 min-w-0 ml-3">
                             <div class="flex justify-between items-start">
                                 <p class="font-semibold text-gray-900 truncate"><?= htmlspecialchars($row['nama']) ?></p>
-                                <p class="text-xs text-gray-400 whitespace-nowrap ml-2"><?= date('H:i', strtotime($row['last_time'])) ?></p>
+                                <p class="text-xs text-gray-400 whitespace-nowrap ml-2"><?= date('H:i', strtotime($row['created_at'])) ?></p>
                             </div>
                             <p class="text-sm text-gray-600 truncate mt-1"><?= htmlspecialchars($last_msg) ?></p>
                         </div>
@@ -232,7 +259,9 @@ if ($chatWith > 0) {
 
         <!-- AREA CHAT -->
         <div class="flex-1 flex flex-col bg-white">
-            <?php if($chatWith > 0 && !empty($pembeli_nama)): ?>
+            <?php if($chatWith > 0): ?>
+
+                
                 <!-- HEADER CHAT -->
                 <div class="p-5 border-b bg-white shadow-sm flex items-center justify-between">
                     <div class="flex items-center gap-3">
@@ -307,7 +336,10 @@ if ($chatWith > 0) {
                 </div>
 
                 <!-- INPUT CHAT -->
-                <form method="POST" class="p-5 border-t bg-white shadow-sm">
+                <form method="POST"
+      action="chat.php?user=<?= $chatWith ?>&id_produk=<?= $id_produk ?>"
+      class="p-5 border-t bg-white shadow-sm">
+
                     <div class="flex gap-3">
                         <button type="button" class="w-12 h-12 flex items-center justify-center text-gray-500 hover:text-indigo-600 hover:bg-gray-100 rounded-full">
                             <i class="fas fa-paperclip text-xl"></i>
@@ -383,7 +415,7 @@ if ($chatWith > 0) {
             if (<?= $chatWith ?>) {
                 location.reload();
             }
-        }, 5000);
+        }, 10000);
     </script>
 </body>
 </html>

@@ -8,57 +8,76 @@ if (!isset($_SESSION['id_user'])) {
     exit;
 }
 
+
+
 // HANYA PEMBELI YANG BOLEH CHAT
 if ($_SESSION['role'] !== 'pembeli') {
     die("Akses ditolak");
 }
 
-$pembeli_id = $_SESSION['id_user'];
+$pembeli_id   = $_SESSION['id_user'];
 $pembeli_nama = $_SESSION['nama'];
 
-// AMBIL SEMUA PENJUAL (dalam kasus ini ambil pertama/utama)
-$qPenjual = mysqli_query($conn, "
-    SELECT id_user, nama 
-    FROM users 
-    WHERE role = 'penjual' 
-    ORDER BY id_user ASC
-    LIMIT 1
-");
-
-$penjual = mysqli_fetch_assoc($qPenjual);
-
-if (!$penjual) {
-    die("Penjual tidak ditemukan");
+// CEK ID PRODUK
+if (!isset($_GET['id_produk'])) {
+    die("Produk tidak dipilih");
 }
 
-$penjual_id = $penjual['id_user'];
-$penjual_nama = $penjual['nama'];
+$id_produk = intval($_GET['id_produk']);
 
-// MARK AS READ untuk pesan dari penjual
-mysqli_query($conn, "UPDATE messages SET is_read = 1 WHERE sender_id = '$penjual_id' AND receiver_id = '$pembeli_id' AND is_read = 0");
+// AMBIL PRODUK + PENJUAL
+$qProduk = mysqli_query($conn, "
+    SELECT p.id_produk, p.nama_buku, u.id_user AS id_penjual, u.nama AS nama_penjual
+    FROM produk p
+    JOIN users u ON p.id_penjual = u.id_user
+    WHERE p.id_produk = '$id_produk'
+");
+
+$produk = mysqli_fetch_assoc($qProduk);
+
+if (!$produk) {
+    die("Produk tidak ditemukan");
+}
+
+$penjual_id   = $produk['id_penjual'];
+$penjual_nama = $produk['nama_penjual'];
+$nama_buku  = $produk['nama_buku'];
+
+// MARK AS READ (KHUSUS PRODUK INI)
+mysqli_query($conn, "
+    UPDATE messages 
+    SET is_read = 1 
+    WHERE sender_id = '$penjual_id'
+      AND receiver_id = '$pembeli_id'
+      AND id_produk = '$id_produk'
+      AND is_read = 0
+");
 
 // KIRIM PESAN
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pesan'])) {
     $pesan = mysqli_real_escape_string($conn, $_POST['pesan']);
-    
+
     mysqli_query($conn, "
-        INSERT INTO messages (sender_id, receiver_id, message, is_read)
-        VALUES ('$pembeli_id', '$penjual_id', '$pesan', 0)
+        INSERT INTO messages (sender_id, receiver_id, id_produk, message, is_read)
+        VALUES ('$pembeli_id', '$penjual_id', '$id_produk', '$pesan', 0)
     ");
-    
-    // Redirect untuk refresh
-    header("Location: pesan.php");
+
+    header("Location: pesan.php?id_produk=$id_produk");
     exit;
 }
 
-// AMBIL CHAT HISTORY
+// AMBIL CHAT HISTORY (KHUSUS PRODUK INI)
 $chatQuery = mysqli_query($conn, "
-    SELECT m.*, u.nama as sender_nama, u.role as sender_role
+    SELECT m.*, u.nama AS sender_nama, u.role AS sender_role
     FROM messages m
     JOIN users u ON u.id_user = m.sender_id
-    WHERE (sender_id='$pembeli_id' AND receiver_id='$penjual_id')
-       OR (sender_id='$penjual_id' AND receiver_id='$pembeli_id')
-    ORDER BY created_at ASC
+    WHERE m.id_produk = '$id_produk'
+    AND (
+        (m.sender_id='$pembeli_id' AND m.receiver_id='$penjual_id')
+        OR
+        (m.sender_id='$penjual_id' AND m.receiver_id='$pembeli_id')
+    )
+    ORDER BY m.created_at ASC
 ");
 
 $chatHistory = [];
@@ -66,17 +85,20 @@ while ($row = mysqli_fetch_assoc($chatQuery)) {
     $chatHistory[] = $row;
 }
 
-// AMBIL PESAN BELUM DIBACA UNTUK NOTIFIKASI
+// AMBIL PESAN BELUM DIBACA (PER PRODUK)
 $unreadQuery = mysqli_query($conn, "
-    SELECT COUNT(*) as unread_count 
+    SELECT COUNT(*) AS unread_count 
     FROM messages 
-    WHERE receiver_id = '$pembeli_id' 
-    AND sender_id = '$penjual_id'
-    AND is_read = 0
+    WHERE receiver_id = '$pembeli_id'
+      AND sender_id = '$penjual_id'
+      AND id_produk = '$id_produk'
+      AND is_read = 0
 ");
-$unreadData = mysqli_fetch_assoc($unreadQuery);
+
+$unreadData  = mysqli_fetch_assoc($unreadQuery);
 $unreadCount = $unreadData['unread_count'] ?? 0;
 ?>
+
 
 <!DOCTYPE html>
 <html lang="id">
@@ -535,7 +557,7 @@ $unreadCount = $unreadData['unread_count'] ?? 0;
                     </div>
                     <div>
                         <h1 class="text-2xl font-bold brand-font text-amber-100 mb-1">AKSARA JIWA</h1>
-                        <p class="text-xs text-amber-300/80">Bookstore & Coffee</p>
+                        <p class="text-xs text-amber-300/80">Bookstore </p>
                     </div>
                 </div>
                 
@@ -566,7 +588,7 @@ $unreadCount = $unreadData['unread_count'] ?? 0;
                     
                     <a href="halaman-pesanan.php" class="nav-item">
                         <i class="fas fa-shopping-cart w-5 text-center"></i>
-                        <span>Pesanan</span>
+                        <span>Produk</span>
                     </a>
                     
                     <a href="status.php" class="nav-item">
@@ -657,7 +679,7 @@ $unreadCount = $unreadData['unread_count'] ?? 0;
                 <!-- Store Info -->
                 <div class="hidden md:flex items-center gap-2 text-amber-700">
                     <i class="fas fa-coffee"></i>
-                    <span class="text-sm font-medium">Bookstore & Coffee</span>
+                    <span class="text-sm font-medium">Bookstore </span>
                 </div>
             </div>
             

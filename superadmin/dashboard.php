@@ -10,6 +10,8 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'super_admin') {
 
 $id_user = $_SESSION['id_user'];
 
+
+
 // Ambil data user yang login
 $query = mysqli_query($conn, "SELECT * FROM users WHERE id_user='$id_user'");
 $user = mysqli_fetch_assoc($query);

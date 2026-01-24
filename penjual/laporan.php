@@ -8,6 +8,8 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'penjual') {
     exit;
 }
 
+
+
 // KONFIGURASI PAGINATION
 $limit = 10;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -90,6 +92,7 @@ $data = mysqli_query($conn, $sql);
                 <a href="dashboard.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
                     <i class="fas fa-chart-line w-5"></i> Dashboard
                 </a>
+                
                 <a href="produk.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
                     <i class="fas fa-box-open w-5"></i> Produk
                 </a>
@@ -101,6 +104,9 @@ $data = mysqli_query($conn, $sql);
                 </a>
                 <a href="chat.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
                     <i class="fas fa-comments w-5"></i> Chat
+                </a>
+                <a href="admin.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
+                    <i class="fas fa-store w-5"></i> Data Penjual
                 </a>
                 <a href="akun_saya.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
                     <i class="fas fa-user-circle w-5"></i> Akun Saya

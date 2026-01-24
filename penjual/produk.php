@@ -10,6 +10,8 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'penjual') {
 
 $id_penjual = $_SESSION['id_user'];
 
+
+
 // SEARCH
 $search = $_GET['search'] ?? '';
 
@@ -195,6 +197,8 @@ if (isset($_GET['hapus'])) {
            <i class="fas fa-chart-line w-5 text-center"></i>
            <span>Dashboard</span>
         </a>
+        <!-- Data Penjual -->
+        
 
         <!-- Produk (Active) -->
         <a href="produk.php"
@@ -226,6 +230,12 @@ if (isset($_GET['hapus'])) {
                 </a>
             </div>
         </div>
+
+        <a href="admin.php"
+           class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
+           <i class="fas fa-store w-5 text-center"></i>
+           <span>Data Penjual</span>
+        </a>
 
         <!-- My Account -->
         <a href="akun_saya.php"

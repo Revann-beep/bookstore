@@ -7,6 +7,8 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'penjual') {
     exit;
 }
 
+
+
 $bulan = isset($_GET['bulan']) ? $_GET['bulan'] : date('m');
 $tahun = isset($_GET['tahun']) ? $_GET['tahun'] : date('Y');
 
@@ -96,11 +98,21 @@ $stat = mysqli_fetch_assoc($statResult);
                 <a href="laporan.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
                     <i class="fas fa-file-alt w-5"></i> Laporan
                 </a>
+                
+                <a href="chat.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
+                    <i class="fas fa-comments w-5"></i> Chat    
+                </a>
+                <a href="admin.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
+                    <i class="fas fa-store w-5"></i> Data Penjual
+                </a>
                 <a href="grafik.php" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-indigo-50 text-indigo-600 font-medium">
                     <i class="fas fa-chart-bar w-5"></i> Grafik
                 </a>
                 <a href="akun_saya.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
                     <i class="fas fa-user-circle w-5"></i> Akun Saya
+                </a>
+                <a href="help.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
+                    <i class="fas fa-question-circle w-5"></i> Bantuan
                 </a>
             </nav>
         </div>

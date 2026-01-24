@@ -8,6 +8,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'super_admin') {
     exit;
 }
 
+
 // HAPUS PEMBELI
 if (isset($_GET['hapus'])) {
     $id = $_GET['hapus'];

@@ -5,6 +5,8 @@ require '../auth/connection.php';
    HANDLE AKSI
 ====================== */
 
+
+
 // APPROVE
 if (isset($_POST['approve'])) {
   $id = $_POST['id'];
@@ -28,16 +30,25 @@ if (isset($_POST['tolak'])) {
 }
 
 // INPUT RESI
+// INPUT RESI + LINK LACAK
 if (isset($_POST['resi'])) {
-  $id = $_POST['id'];
+  $id   = $_POST['id'];
   $resi = $_POST['no_resi'];
+
+  // link lacak dummy (pura-pura)
+  $link_lacak = "https://tracking-dummy.com/lacak?resi=".$resi;
+
   mysqli_query($conn, "
     UPDATE orders 
-    SET no_resi='$resi' 
+    SET 
+      no_resi='$resi',
+      link_lacak='$link_lacak'
     WHERE id_order='$id'
   ");
+
   header("Location: approve.php");
 }
+
 
 // DELETE (setelah refund 1 menit)
 if (isset($_GET['delete'])) {
@@ -98,6 +109,7 @@ if (isset($_GET['delete'])) {
         <a href="dashboard.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
           <i class="fas fa-chart-line w-5"></i> Dashboard
         </a>
+        
         <a href="produk.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
           <i class="fas fa-box-open w-5"></i> Produk
         </a>
@@ -109,6 +121,9 @@ if (isset($_GET['delete'])) {
         </a>
         <a href="chat.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
           <i class="fas fa-comments w-5"></i> Chat
+        </a>
+        <a href="admin.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
+          <i class="fas fa-store w-5"></i> Data Penjual
         </a>
         <a href="akun_saya.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
           <i class="fas fa-user-circle w-5"></i> Akun Saya
@@ -199,12 +214,16 @@ if (isset($_GET['delete'])) {
                 </span>
               </td>
               <td class="p-4">
-                <?php if($o['no_resi']): ?>
-                  <span class="font-medium text-gray-800"><?= $o['no_resi'] ?></span>
-                <?php else: ?>
-                  <span class="text-gray-400">-</span>
-                <?php endif; ?>
-              </td>
+  <?php if($o['no_resi']) { ?>
+  <a href="../auth/track.php?resi=<?= $o['no_resi'] ?>"
+     target="_blank"
+     class="text-indigo-600 hover:underline text-sm">
+     Lacak Pesanan
+  </a>
+<?php } ?>
+
+</td>
+
               <td class="p-4">
                 <div class="flex flex-wrap gap-2">
                   <?php if ($o['status']=='menunggu_verifikasi') { ?>

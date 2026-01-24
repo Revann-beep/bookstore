@@ -7,6 +7,8 @@ if (!isset($_SESSION['id_user'])) {
     exit;
 }
 
+
+
 $id_user = $_SESSION['id_user'];
 
 /* USER */
@@ -61,7 +63,7 @@ $total = 0;
     <div class="mb-10">
       <h1 class="text-3xl font-bold text-amber-300 brand-font mb-1">AKSARA</h1>
       <h1 class="text-3xl font-bold text-amber-100 brand-font">JIWA</h1>
-      <p class="text-slate-400 text-sm mt-2">Bookstore & Coffee</p>
+      <p class="text-slate-400 text-sm mt-2">Bookstore </p>
     </div>
     <nav class="space-y-2">
       <a href="Dashbord_pembeli.php" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-700/50 hover:text-white transition-all duration-300">
@@ -75,7 +77,7 @@ $total = 0;
           <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
           <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" />
         </svg>
-        Pesanan
+        Produk
       </a>
       <a href="halaman-keranjang.php" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white font-medium shadow-lg">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -289,7 +291,7 @@ $total = 0;
     <div class="w-8 h-1 bg-gradient-to-r from-amber-400 to-amber-600 rounded-full"></div>
     <div class="w-8 h-1 bg-gradient-to-r from-amber-400 to-amber-600 rounded-full"></div>
   </div>
-  <p>© <?= date('Y'); ?> <span class="text-amber-600 font-semibold brand-font">Aksara Jiwa</span> - Bookstore & Coffee</p>
+  <p>© <?= date('Y'); ?> <span class="text-amber-600 font-semibold brand-font">Aksara Jiwa</span> - Bookstore </p>
   <p class="text-sm mt-1">Keranjang Belanja | <?= htmlspecialchars($user['nama']) ?></p>
 </footer>
 

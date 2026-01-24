@@ -4,11 +4,13 @@ require '../auth/connection.php';
 
 // CEGAH AKSES SELAIN PENJUAL
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'penjual') {
-    header("Location: ../login.php");
+    header("Location: ../index.php");
     exit;
 }
 
 $id_penjual = $_SESSION['id_user'];
+
+
 
 // AMBIL DATA PENJUAL
 $user = mysqli_query($conn, "SELECT * FROM users WHERE id_user='$id_penjual'");
@@ -140,6 +142,7 @@ $hari = $hari_indo[$hari];
         <a href="dashboard.php" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-indigo-50 text-indigo-600 font-medium">
           <i class="fas fa-chart-line w-5"></i> Dashboard
         </a>
+        
         <a href="produk.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
           <i class="fas fa-box-open w-5"></i> Produk
         </a>
@@ -151,6 +154,10 @@ $hari = $hari_indo[$hari];
         </a>
         <a href="chat.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
           <i class="fas fa-comments w-5"></i> Chat
+        </a>
+
+        <a href="admin.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
+            <i class="fas fa-store w-5"></i> Data Penjual
         </a>
         <a href="akun_saya.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
           <i class="fas fa-user-circle w-5"></i> Akun Saya
@@ -256,7 +263,7 @@ $hari = $hari_indo[$hari];
             </div>
             
             <div class="p-4 border-t">
-              <a href="chat.php" 
+              <a href="chat.php?user=<?= $row['id_user'] ?>&id_produk=<?= $row['id_produk'] ?>"> 
                  class="block text-center text-indigo-600 hover:text-indigo-800 font-medium flex items-center justify-center gap-1">
                 <span>Lihat semua pesan</span>
                 <i class="fas fa-arrow-right text-sm"></i>

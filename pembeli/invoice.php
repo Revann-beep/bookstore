@@ -41,6 +41,7 @@ $detailQ = mysqli_query($conn, "
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 @media print {
     .no-print { display: none !important; }
@@ -57,6 +58,15 @@ body {
 .brand-font {
     font-family: 'Playfair Display', serif;
 }
+.copy-btn {
+    transition: all 0.2s ease;
+}
+.copy-btn:hover {
+    transform: scale(1.05);
+}
+.copy-btn:active {
+    transform: scale(0.95);
+}
 </style>
 </head>
 
@@ -64,7 +74,7 @@ body {
 
 <!-- KEMBALI -->
 <a href="status.php"
-   class="no-print absolute top-6 left-6 flex items-center gap-2 bg-gradient-to-r from-slate-700 to-slate-800 text-white px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
+   class="no-print absolute top-6 left-6 flex items-center gap-2 bg-gradient-to-r from-slate-700 to-slate-800 text-white px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 z-10">
    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
      <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
    </svg>
@@ -78,11 +88,11 @@ body {
     <div class="bg-gradient-to-r from-amber-600 to-amber-800 p-8 text-white text-center">
         <div class="mb-4">
             <h1 class="text-3xl font-bold brand-font mb-1">AKSARA JIWA</h1>
-            <p class="text-amber-200 text-sm">Bookstore & Coffee</p>
+            <p class="text-amber-200 text-sm">Bookstore & Digital Publishing</p>
         </div>
         <div class="flex items-center justify-center gap-2">
             <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-            <p class="text-sm">Invoice Digital</p>
+            <p class="text-sm">Invoice Digital • Pembayaran Aman</p>
         </div>
     </div>
 
@@ -91,8 +101,8 @@ body {
         <div class="mb-8">
             <div class="flex justify-between items-start mb-6">
                 <div>
-                    <h2 class="text-2xl font-bold text-slate-800">INVOICE</h2>
-                    <p class="text-slate-500 text-sm">Pembelian Buku</p>
+                    <h2 class="text-2xl font-bold text-slate-800">INVOICE PEMBAYARAN</h2>
+                    <p class="text-slate-500 text-sm">Transaksi Buku Digital & Cetak</p>
                 </div>
                 <div class="text-right">
                     <div class="text-3xl font-bold text-amber-600">#<?= $order['id_order'] ?></div>
@@ -100,16 +110,22 @@ body {
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-2 gap-4 mb-6">
                 <div class="bg-gradient-to-br from-amber-50 to-amber-100 p-4 rounded-xl">
                     <p class="text-xs text-amber-800 font-medium mb-1">Tanggal Order</p>
                     <p class="font-semibold text-slate-800"><?= date('d F Y', strtotime($order['created_at'])) ?></p>
                     <p class="text-sm text-slate-600"><?= date('H:i', strtotime($order['created_at'])) ?> WIB</p>
                 </div>
                 <div class="bg-gradient-to-br from-slate-50 to-slate-100 p-4 rounded-xl">
-                    <p class="text-xs text-slate-800 font-medium mb-1">Status</p>
-                    <div class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                        <div class="w-2 h-2 rounded-full bg-amber-500"></div>
+                    <p class="text-xs text-slate-800 font-medium mb-1">Status Pembayaran</p>
+                    <div class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium 
+                        <?= $order['status'] == 'pending' ? 'bg-amber-100 text-amber-800' : 
+                           ($order['status'] == 'paid' ? 'bg-green-100 text-green-800' : 
+                           'bg-blue-100 text-blue-800') ?>">
+                        <div class="w-2 h-2 rounded-full 
+                            <?= $order['status'] == 'pending' ? 'bg-amber-500' : 
+                               ($order['status'] == 'paid' ? 'bg-green-500' : 
+                               'bg-blue-500') ?>"></div>
                         <?= ucfirst($order['status']) ?>
                     </div>
                 </div>
@@ -183,7 +199,7 @@ body {
         </div>
 
         <!-- TOTAL -->
-        <div class="bg-gradient-to-r from-slate-800 to-slate-900 rounded-2xl p-6 text-white">
+        <div class="bg-gradient-to-r from-slate-800 to-slate-900 rounded-2xl p-6 text-white mb-6">
             <div class="flex justify-between items-center mb-4">
                 <div>
                     <p class="text-sm text-slate-300">Total Pembayaran</p>
@@ -193,6 +209,65 @@ body {
                     <p class="text-3xl font-bold">Rp <?= number_format($order['total_harga'],0,',','.') ?></p>
                 </div>
             </div>
+            
+            <!-- REKENING DUMMY - DITAMBAHKAN DI ATAS TEKS TERIMA KASIH -->
+            <?php if ($order['status'] == 'pending'): ?>
+            <div class="border-t border-slate-700 pt-4 mb-4">
+                <div class="mb-3">
+                    <p class="text-xs text-slate-400 mb-2 text-center">Transfer ke rekening berikut:</p>
+                    
+                    <!-- REKENING 1 -->
+                    <div class="flex items-center justify-between bg-slate-700/50 p-3 rounded-lg mb-2">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
+                                <i class="fas fa-university text-white text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold">BCA (Bank Central Asia)</p>
+                                <p class="text-xs text-slate-300">A/N: PT Aksara Jiwa Indonesia</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm font-mono font-bold">123-456-7890</p>
+                            <button type="button" 
+                                    onclick="copyToClipboard('1234567890')"
+                                    class="copy-btn text-xs text-blue-400 hover:text-blue-300 mt-1">
+                                <i class="fas fa-copy mr-1"></i>Copy
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- REKENING 2 -->
+                    <div class="flex items-center justify-between bg-slate-700/50 p-3 rounded-lg">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center">
+                                <i class="fas fa-university text-white text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold">Mandiri</p>
+                                <p class="text-xs text-slate-300">A/N: PT Aksara Jiwa Indonesia</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm font-mono font-bold">987-654-3210</p>
+                            <button type="button" 
+                                    onclick="copyToClipboard('9876543210')"
+                                    class="copy-btn text-xs text-green-400 hover:text-green-300 mt-1">
+                                <i class="fas fa-copy mr-1"></i>Copy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-amber-900/30 border border-amber-800/50 rounded-lg p-3 mb-3">
+                    <p class="text-xs text-amber-200 text-center">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Transfer tepat sesuai nominal di atas dan upload bukti pembayaran
+                    </p>
+                </div>
+            </div>
+            <?php endif; ?>
+            
             <div class="border-t border-slate-700 pt-4">
                 <p class="text-center text-sm text-slate-300">
                     Terima kasih telah berbelanja di Aksara Jiwa
@@ -209,7 +284,7 @@ body {
             </div>
             <p class="text-center text-xs text-slate-500">
                 Invoice ini sah dan dapat digunakan sebagai bukti pembayaran.<br>
-                © <?= date('Y'); ?> Aksara Jiwa - Bookstore & Coffee
+                © <?= date('Y'); ?> Aksara Jiwa - Bookstore & Digital Publishing
             </p>
         </div>
     </div>
@@ -239,6 +314,65 @@ body {
 </div>
 
 <script>
+// Fungsi copy to clipboard
+function copyToClipboard(text, button = null) {
+    navigator.clipboard.writeText(text.replace(/-/g, '')).then(() => {
+        // Tampilkan feedback
+        const originalText = button ? button.innerHTML : '';
+        if (button) {
+            button.innerHTML = '<i class="fas fa-check mr-1"></i>Copied!';
+            button.classList.add('text-green-400');
+            button.classList.remove('text-blue-400', 'text-green-400', 'hover:text-blue-300', 'hover:text-green-300');
+            
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.classList.remove('text-green-400');
+                if (text.includes('123')) {
+                    button.classList.add('text-blue-400', 'hover:text-blue-300');
+                } else {
+                    button.classList.add('text-green-400', 'hover:text-green-300');
+                }
+            }, 2000);
+        }
+        
+        // Tampilkan toast notification
+        showToast('Nomor rekening berhasil disalin!');
+    }).catch(err => {
+        console.error('Gagal menyalin: ', err);
+        showToast('Gagal menyalin, coba lagi', 'error');
+    });
+}
+
+// Fungsi toast notification
+function showToast(message, type = 'success') {
+    // Hapus toast sebelumnya jika ada
+    const existingToast = document.getElementById('copy-toast');
+    if (existingToast) existingToast.remove();
+    
+    // Buat toast baru
+    const toast = document.createElement('div');
+    toast.id = 'copy-toast';
+    toast.className = `fixed top-6 right-6 px-4 py-3 rounded-lg shadow-xl z-50 animate-fade-in ${type === 'success' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}`;
+    toast.innerHTML = `
+        <div class="flex items-center gap-2">
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Hapus toast setelah 3 detik
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.classList.add('animate-fade-out');
+            setTimeout(() => {
+                if (toast.parentNode) toast.remove();
+            }, 300);
+        }
+    }, 3000);
+}
+
 // Add print styling
 document.addEventListener('DOMContentLoaded', function() {
     const printBtn = document.querySelector('button[onclick="window.print()"]');
@@ -250,6 +384,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Tambahkan style animasi untuk toast
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeOut {
+        from { opacity: 1; transform: translateY(0); }
+        to { opacity: 0; transform: translateY(-10px); }
+    }
+    .animate-fade-in {
+        animation: fadeIn 0.3s ease forwards;
+    }
+    .animate-fade-out {
+        animation: fadeOut 0.3s ease forwards;
+    }
+`;
+document.head.appendChild(style);
 </script>
 
 </body>

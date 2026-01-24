@@ -8,6 +8,8 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'penjual') {
     exit;
 }
 
+
+
 $id_user = $_SESSION['id_user'];
 
 // update last_activity
@@ -132,6 +134,8 @@ $totalProdukAktif = $produkAktif['total_produk'] ?? 0;
             <i class="fas fa-chart-line w-5 text-indigo-500"></i>
             <span>Dashboard</span>
         </a>
+
+          
         
         <a href="produk.php" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-indigo-50 text-gray-700 transition-colors duration-200">
             <i class="fas fa-box-open w-5 text-emerald-500"></i>
@@ -153,6 +157,11 @@ $totalProdukAktif = $produkAktif['total_produk'] ?? 0;
                 <a href="chat.php" class="block px-3 py-2 rounded-lg hover:bg-gray-100 text-sm transition-colors duration-200">Chat</a>
             </div>
         </div>
+       
+       <a href="admin.php" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-indigo-50 text-gray-700 transition-colors duration-200">
+            <i class="fas fa-store w-5"></i>
+            <span>Data Penjual</span>
+        </a> 
         
         <a href="akun_saya.php" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-600 font-medium border border-indigo-100">
             <i class="fas fa-user-circle w-5 text-indigo-600"></i>

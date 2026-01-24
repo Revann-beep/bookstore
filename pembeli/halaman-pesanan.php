@@ -2,18 +2,36 @@
 session_start();
 require '../auth/connection.php';
 
+
+
 /* AMBIL DATA PRODUK + ID PENJUAL */
+$search = $_GET['search'] ?? '';
+
+$where = "";
+if ($search !== '') {
+    $search_safe = mysqli_real_escape_string($conn, $search);
+    $where = "
+        WHERE 
+            p.nama_buku LIKE '%$search_safe%'
+            OR k.nama_kategori LIKE '%$search_safe%'
+    ";
+}
+
 $produkQ = mysqli_query($conn, "
-    SELECT 
-        id_produk,
-        id_penjual,
-        nama_buku,
-        harga,
-        stok,
-        gambar
-    FROM produk
-    ORDER BY created_at DESC
+    SELECT DISTINCT
+        p.id_produk,
+        p.id_penjual,
+        p.nama_buku,
+        p.harga,
+        p.stok,
+        p.gambar,
+        k.nama_kategori
+    FROM produk p
+    LEFT JOIN kategori k ON p.id_kategori = k.id_kategori
+    $where
+    ORDER BY p.created_at DESC
 ");
+
 
 $id_user = $_SESSION['id_user'] ?? null;
 
@@ -28,6 +46,9 @@ if ($id_user) {
     ");
     $user = mysqli_fetch_assoc($userQ);
 }
+
+// $search = $_GET['search'] ?? '';
+
 ?>
 
 <!DOCTYPE html>
@@ -47,6 +68,17 @@ if ($id_user) {
     .brand-font {
       font-family: 'Playfair Display', serif;
     }
+    .search-container {
+      position: relative;
+    }
+    .search-icon {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body class="bg-gradient-to-b from-slate-50 to-slate-100">
@@ -58,7 +90,7 @@ if ($id_user) {
   <div class="mb-10">
     <h1 class="text-3xl font-bold text-amber-300 brand-font mb-1">AKSARA</h1>
     <h1 class="text-3xl font-bold text-amber-100 brand-font">JIWA</h1>
-    <p class="text-slate-400 text-sm mt-2">Bookstore & Coffee</p>
+    <p class="text-slate-400 text-sm mt-2">Bookstore </p>
   </div>
   <nav class="space-y-2">
     <a href="dashboard_pembeli.php" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-700/50 hover:text-white transition-all duration-300">
@@ -72,7 +104,7 @@ if ($id_user) {
         <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
         <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" />
       </svg>
-      Pesanan
+      Produk
     </a>
     <a href="halaman-keranjang.php" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-700/50 hover:text-white transition-all duration-300">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -111,9 +143,9 @@ if ($id_user) {
 <main class="flex-1 p-8">
 
 <!-- TOPBAR -->
-<div class="flex justify-between items-center mb-10">
+<div class="flex justify-between items-center mb-6">
   <div>
-    <h2 class="text-4xl font-bold text-slate-800 brand-font mb-2">Pesanan</h2>
+    <h2 class="text-4xl font-bold text-slate-800 brand-font mb-2">Produk</h2>
     <p class="text-slate-600">Jelajahi koleksi buku terbaik kami</p>
   </div>
   <div class="flex items-center gap-3 bg-gradient-to-r from-slate-800 to-slate-900 px-5 py-3 rounded-xl shadow-lg">
@@ -129,10 +161,73 @@ if ($id_user) {
   </div>
 </div>
 
+<!-- SEARCH BAR -->
+<div class="mb-8">
+  <form method="GET" action="" class="max-w-2xl mx-auto">
+    <div class="search-container">
+      <svg class="search-icon h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      <input type="text" 
+             name="search" 
+             value="<?= htmlspecialchars($search); ?>"
+             placeholder="Cari buku berdasarkan judul..." 
+             class="w-full pl-12 pr-6 py-4 bg-white border border-slate-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700 placeholder-slate-400 text-base">
+    </div>
+    
+    <!-- Filter dan Clear Button -->
+    <div class="flex gap-3 mt-3 justify-end">
+      <?php if ($search): ?>
+        <a href="halaman-pesanan.php" 
+           class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-all duration-300 flex items-center gap-2">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          Clear Search
+        </a>
+      <?php endif; ?>
+      <button type="submit" 
+              class="px-6 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all duration-300 shadow hover:shadow-lg flex items-center gap-2">
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        Search
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- RESULTS INFO -->
+<?php if ($search): ?>
+  <div class="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl">
+    <div class="flex items-center gap-3">
+      <svg class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+      </svg>
+      <div>
+        <p class="font-semibold text-blue-800">Hasil pencarian untuk: <span class="text-amber-600">"<?= htmlspecialchars($search); ?>"</span></p>
+        <p class="text-sm text-blue-600 mt-1">
+          <?php 
+            $count = mysqli_num_rows($produkQ);
+            echo $count > 0 ? "Ditemukan {$count} buku" : "Tidak ditemukan buku dengan judul tersebut";
+          ?>
+        </p>
+      </div>
+    </div>
+  </div>
+<?php endif; ?>
+
 <!-- PRODUK -->
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 
-<?php while ($p = mysqli_fetch_assoc($produkQ)) : ?>
+<?php 
+// Check if there are any results
+$produkCount = mysqli_num_rows($produkQ);
+
+if ($produkCount > 0):
+  mysqli_data_seek($produkQ, 0); // Reset pointer
+  while ($p = mysqli_fetch_assoc($produkQ)): 
+?>
 <div class="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden border border-slate-100 group">
 
   <div class="relative overflow-hidden">
@@ -204,7 +299,39 @@ if ($id_user) {
 
   </div>
 </div>
-<?php endwhile; ?>
+<?php 
+  endwhile;
+else:
+  // Display message if no products found
+  if ($search) {
+    echo '<div class="col-span-full text-center py-12">
+            <div class="inline-block p-6 bg-gradient-to-r from-red-50 to-pink-50 rounded-2xl">
+              <svg class="h-16 w-16 text-red-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <h3 class="text-xl font-bold text-slate-800 mb-2">Buku tidak ditemukan</h3>
+              <p class="text-slate-600 mb-4">Tidak ada buku dengan judul "<span class="font-semibold text-amber-600">' . htmlspecialchars($search) . '</span>"</p>
+              <a href="halaman-pesanan.php" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all duration-300">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                </svg>
+                Lihat Semua Buku
+              </a>
+            </div>
+          </div>';
+  } else {
+    echo '<div class="col-span-full text-center py-12">
+            <div class="inline-block p-6 bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl">
+              <svg class="h-16 w-16 text-slate-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+              <h3 class="text-xl font-bold text-slate-800 mb-2">Belum ada produk</h3>
+              <p class="text-slate-600">Tidak ada buku yang tersedia saat ini</p>
+            </div>
+          </div>';
+  }
+endif;
+?>
 
 </div>
 
@@ -215,11 +342,29 @@ if ($id_user) {
     <div class="w-8 h-1 bg-gradient-to-r from-amber-400 to-amber-600 rounded-full"></div>
     <div class="w-8 h-1 bg-gradient-to-r from-amber-400 to-amber-600 rounded-full"></div>
   </div>
-  <p>© <?= date('Y'); ?> <span class="text-amber-600 font-semibold brand-font">Aksara Jiwa</span> - Bookstore & Coffee</p>
-  <p class="text-sm mt-1">Halaman Pesanan | <?= htmlspecialchars($user['nama'] ?? 'User'); ?></p>
+  <p>© <?= date('Y'); ?> <span class="text-amber-600 font-semibold brand-font">Aksara Jiwa</span> - Bookstore </p>
+  <p class="text-sm mt-1">Halaman Produk | <?= htmlspecialchars($user['nama'] ?? 'User'); ?></p>
 </footer>
 
 </main>
 </div>
+
+<script>
+// Optional: Add auto-focus on search input
+document.addEventListener('DOMContentLoaded', function() {
+  const searchInput = document.querySelector('input[name="search"]');
+  if (searchInput && searchInput.value === '') {
+    searchInput.focus();
+  }
+  
+  // Add enter key support for search
+  searchInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      this.closest('form').submit();
+    }
+  });
+});
+</script>
 </body>
 </html>

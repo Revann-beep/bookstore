@@ -2,6 +2,14 @@
 session_start();
 require '../auth/connection.php';
 
+mysqli_query($conn, "
+    UPDATE users 
+    SET last_activity = NOW(),
+        status = 'online'
+    WHERE id_user = '$id_user'
+");
+
+
 $edit = false;
 $id_kategori = '';
 $nama_kategori = '';

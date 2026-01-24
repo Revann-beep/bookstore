@@ -8,6 +8,8 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'super_admin') {
     exit;
 }
 
+
+
 // Update last_activity Super Admin sendiri (opsional)
 mysqli_query($conn, "UPDATE users SET last_activity=NOW() WHERE id_user='{$_SESSION['id_user']}'");
 
