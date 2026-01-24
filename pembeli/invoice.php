@@ -10,9 +10,9 @@ if (!$id_order) {
     exit;
 }
 
-/* HEADER */
+/* HEADER - SESUAIKAN DENGAN STRUKTUR TABEL */
 $orderQ = mysqli_query($conn, "
-    SELECT o.*, u.nama, u.email
+    SELECT o.*, u.nama, u.email, u.alamat
     FROM orders o
     JOIN users u ON u.id_user = o.id_pembeli
     WHERE o.id_order = '$id_order'
@@ -120,13 +120,15 @@ body {
                     <p class="text-xs text-slate-800 font-medium mb-1">Status Pembayaran</p>
                     <div class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium 
                         <?= $order['status'] == 'pending' ? 'bg-amber-100 text-amber-800' : 
-                           ($order['status'] == 'paid' ? 'bg-green-100 text-green-800' : 
-                           'bg-blue-100 text-blue-800') ?>">
+                           ($order['status'] == 'menunggu_verifikasi' ? 'bg-yellow-100 text-yellow-800' : 
+                           ($order['status'] == 'di_terima' ? 'bg-green-100 text-green-800' : 
+                           'bg-blue-100 text-blue-800')) ?>">
                         <div class="w-2 h-2 rounded-full 
                             <?= $order['status'] == 'pending' ? 'bg-amber-500' : 
-                               ($order['status'] == 'paid' ? 'bg-green-500' : 
-                               'bg-blue-500') ?>"></div>
-                        <?= ucfirst($order['status']) ?>
+                               ($order['status'] == 'menunggu_verifikasi' ? 'bg-yellow-500' : 
+                               ($order['status'] == 'di_terima' ? 'bg-green-500' : 
+                               'bg-blue-500')) ?>"></div>
+                        <?= str_replace('_', ' ', ucfirst($order['status'])) ?>
                     </div>
                 </div>
             </div>
@@ -210,7 +212,7 @@ body {
                 </div>
             </div>
             
-            <!-- REKENING DUMMY - DITAMBAHKAN DI ATAS TEKS TERIMA KASIH -->
+            <!-- REKENING DUMMY DAN ALAMAT PENGIRIMAN -->
             <?php if ($order['status'] == 'pending'): ?>
             <div class="border-t border-slate-700 pt-4 mb-4">
                 <div class="mb-3">
@@ -259,11 +261,190 @@ body {
                     </div>
                 </div>
                 
+                <!-- ALAMAT PENGIRIMAN -->
+                <div class="border-t border-slate-700 pt-4 mb-4">
+                    <p class="text-xs text-slate-400 mb-3 text-center">Informasi Pengiriman</p>
+                    
+                    <!-- ALAMAT PENJUAL -->
+                    <div class="mb-3">
+                        <p class="text-xs text-slate-400 mb-2 flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                            </svg>
+                            Dikirim Dari:
+                        </p>
+                        <div class="bg-slate-700/50 p-3 rounded-lg">
+                            <p class="text-sm font-semibold text-white mb-1">Aksara Jiwa Bookstore</p>
+                            <p class="text-xs text-slate-300">Jl. Literasi No. 123, Gedung Buku Lantai 3</p>
+                            <p class="text-xs text-slate-300">Jakarta Pusat, DKI Jakarta 10110</p>
+                            <p class="text-xs text-slate-300 mt-1">📞 (021) 1234-5678</p>
+                        </div>
+                    </div>
+                    
+                    <!-- ALAMAT PEMBELI (DARI TABEL USERS) -->
+                    <div>
+                        <p class="text-xs text-slate-400 mb-2 flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                            Dikirim Ke:
+                        </p>
+                        <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
+                            <p class="text-sm font-semibold text-white mb-1"><?= htmlspecialchars($order['nama']) ?></p>
+                            <?php if (!empty($order['alamat'])): ?>
+                                <p class="text-xs text-slate-300"><?= htmlspecialchars($order['alamat']) ?></p>
+                            <?php else: ?>
+                                <p class="text-xs text-amber-300 italic">Alamat belum diisi. Silakan lengkapi profil Anda.</p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    
+                    <!-- INFORMASI PENGIRIMAN -->
+                    <div class="mt-3 bg-blue-900/20 border border-blue-800/30 rounded-lg p-3">
+                        <div class="flex items-start gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                                <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1v-1h4v1a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H20a1 1 0 001-1v-4a1 1 0 00-.293-.707l-2-2A1 1 0 0017 9h-1V4a1 1 0 00-1-1H3zm11 3v4h2.586l1 1H16a1 1 0 00-1-1h-1V7a1 1 0 00-1-1H8a1 1 0 00-1 1v4a1 1 0 001 1h1a1 1 0 001-1V9a1 1 0 011-1h4z" />
+                            </svg>
+                            <div>
+                                <p class="text-xs text-blue-300 font-medium mb-1">Estimasi Pengiriman</p>
+                                <p class="text-xs text-blue-200">
+                                    📦 Akan diproses setelah pembayaran diverifikasi (3-5 hari kerja)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- END ALAMAT PENGIRIMAN -->
+                
                 <div class="bg-amber-900/30 border border-amber-800/50 rounded-lg p-3 mb-3">
                     <p class="text-xs text-amber-200 text-center">
                         <i class="fas fa-info-circle mr-1"></i>
                         Transfer tepat sesuai nominal di atas dan upload bukti pembayaran
                     </p>
+                </div>
+            </div>
+            <?php else: ?>
+            <!-- ALAMAT PENGIRIMAN UNTUK STATUS LAINNYA -->
+            <div class="border-t border-slate-700 pt-4 mb-4">
+                <p class="text-xs text-slate-400 mb-3 text-center">Informasi Pengiriman</p>
+                
+                <!-- ALAMAT PENJUAL -->
+                <div class="mb-3">
+                    <p class="text-xs text-slate-400 mb-2 flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                        </svg>
+                        Dikirim Dari:
+                    </p>
+                    <div class="bg-slate-700/50 p-3 rounded-lg">
+                        <p class="text-sm font-semibold text-white mb-1">Aksara Jiwa Bookstore</p>
+                        <p class="text-xs text-slate-300">Jl. Literasi No. 123, Gedung Buku Lantai 3</p>
+                        <p class="text-xs text-slate-300">Jakarta Pusat, DKI Jakarta 10110</p>
+                        <p class="text-xs text-slate-300 mt-1">📞 (021) 1234-5678</p>
+                    </div>
+                </div>
+                
+                <!-- ALAMAT PEMBELI (DARI TABEL USERS) -->
+                <div class="mb-3">
+                    <p class="text-xs text-slate-400 mb-2 flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                        Dikirim Ke:
+                    </p>
+                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
+                        <p class="text-sm font-semibold text-white mb-1"><?= htmlspecialchars($order['nama']) ?></p>
+                        <?php if (!empty($order['alamat'])): ?>
+                            <p class="text-xs text-slate-300"><?= htmlspecialchars($order['alamat']) ?></p>
+                        <?php else: ?>
+                            <p class="text-xs text-amber-300 italic">Alamat belum diisi.</p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                
+                <!-- NOMOR RESI JIKA ADA -->
+                <?php if (!empty($order['no_resi'])): ?>
+                <div class="bg-green-900/20 border border-green-800/30 rounded-lg p-3 mb-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-start gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm12 2h-4v4h4V6zm-5 0H4v4h7V6z" clip-rule="evenodd" />
+                            </svg>
+                            <div>
+                                <p class="text-xs text-green-300 font-medium mb-1">Nomor Resi Pengiriman</p>
+                                <p class="text-sm font-mono font-bold text-green-200"><?= htmlspecialchars($order['no_resi']) ?></p>
+                            </div>
+                        </div>
+                        <button type="button" 
+                                onclick="copyToClipboard('<?= $order['no_resi'] ?>', this)"
+                                class="copy-btn text-xs bg-green-800 hover:bg-green-700 text-white px-3 py-1 rounded-lg">
+                            <i class="fas fa-copy mr-1"></i>Copy
+                        </button>
+                    </div>
+                </div>
+                <?php endif; ?>
+                
+                <!-- LINK LACAK JIKA ADA -->
+                <?php if (!empty($order['link_lacak'])): ?>
+<div class="bg-blue-900/20 border border-blue-800/30 rounded-lg p-3 mb-3">
+    <div class="flex items-center justify-between">
+        <div class="flex items-start gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clip-rule="evenodd" />
+            </svg>
+            <div>
+                <p class="text-xs text-blue-300 font-medium mb-1">Link Lacak Pengiriman</p>
+                <p class="text-xs text-blue-200 truncate max-w-[200px]">
+                    <?= htmlspecialchars($order['link_lacak']) ?>
+                </p>
+            </div>
+        </div>
+        <a href="<?= htmlspecialchars($order['link_lacak']) ?>" 
+           target="_blank" 
+           class="flex items-center gap-2 text-xs bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-2 rounded-lg transition-all duration-300 hover:shadow-lg">
+            <i class="fas fa-external-link-alt"></i>
+            Lacak
+        </a>
+    </div>
+</div>
+<?php endif; ?>
+                
+                <!-- STATUS PENGIRIMAN -->
+                <div class="bg-blue-900/20 border border-blue-800/30 rounded-lg p-3">
+                    <div class="flex items-start gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                            <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1v-1h4v1a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H20a1 1 0 001-1v-4a1 1 0 00-.293-.707l-2-2A1 1 0 0017 9h-1V4a1 1 0 00-1-1H3zm11 3v4h2.586l1 1H16a1 1 0 00-1-1h-1V7a1 1 0 00-1-1H8a1 1 0 00-1 1v4a1 1 0 001 1h1a1 1 0 001-1V9a1 1 0 011-1h4z" />
+                        </svg>
+                        <div>
+                            <p class="text-xs text-blue-300 font-medium mb-1">Status Pengiriman</p>
+                            <p class="text-xs text-blue-200">
+                                <?php 
+                                switch($order['status']) {
+                                    case 'pending':
+                                        echo "⏳ Menunggu pembayaran";
+                                        break;
+                                    case 'menunggu_verifikasi':
+                                        echo "🔍 Menunggu verifikasi pembayaran";
+                                        break;
+                                    case 'di_terima':
+                                        if (!empty($order['no_resi'])) {
+                                            echo "🚚 Pesanan sedang dikirim";
+                                        } else {
+                                            echo "📦 Pesanan diterima";
+                                        }
+                                        break;
+                                    default:
+                                        echo "📦 Pesanan sedang diproses";
+                                }
+                                ?>
+                            </p>
+                            <?php if ($order['status'] == 'di_terima' && !empty($order['no_resi'])): ?>
+                            <p class="text-xs text-blue-300 mt-1">⏰ Estimasi: 3-5 hari kerja</p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
                 </div>
             </div>
             <?php endif; ?>
@@ -336,7 +517,7 @@ function copyToClipboard(text, button = null) {
         }
         
         // Tampilkan toast notification
-        showToast('Nomor rekening berhasil disalin!');
+        showToast('Berhasil disalin!');
     }).catch(err => {
         console.error('Gagal menyalin: ', err);
         showToast('Gagal menyalin, coba lagi', 'error');
