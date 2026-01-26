@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($user['role'] === 'super_admin') {
             header("Location: superadmin/dashboard.php");
         } elseif ($user['role'] === 'penjual') {
-            header("Location: penjual/dashboard.php");
+            header("Location: auth/lengkapi.php");
         } elseif ($user['role'] === 'pembeli') {
             header("Location: pembeli/dashboard_pembeli.php");
         } else {

@@ -1,50 +1,54 @@
 <?php
 session_start();
-require '../auth/connection.php';
+require 'connection.php';
 
-$id_user  = $_SESSION['id_user'] ?? null;
 $id_order = $_GET['id_order'] ?? null;
 
-if (!$id_user || !$id_order) {
+if (!$id_order) {
     header("Location: ../pembeli/status.php");
     exit;
+}
+
+// Ambil order
+$orderQ = mysqli_query($conn, "SELECT * FROM orders WHERE id_order='$id_order'");
+$order = mysqli_fetch_assoc($orderQ);
+
+// Ambil detail untuk list penjual
+$detailQ = mysqli_query($conn, "
+    SELECT od.*, p.id_penjual, u.nama AS nama_penjual
+    FROM order_details od
+    JOIN produk p ON p.id_produk = od.id_produk
+    JOIN users u ON u.id_user = p.id_penjual
+    WHERE od.id_order = '$id_order'
+");
+
+
+$penjualList = [];
+while($d = mysqli_fetch_assoc($detailQ)){
+    $penjualList[$d['id_penjual']] = $d['nama_penjual'];
 }
 ?>
 
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>Upload Bukti Pembayaran</title>
-<script src="https://cdn.tailwindcss.com"></script>
+    <title>Upload Bukti Transfer</title>
 </head>
+<body>
 
-<body class="bg-slate-200 min-h-screen flex items-center justify-center">
+<h2>Upload Bukti Transfer</h2>
 
-<div class="bg-white w-[360px] p-6 rounded-xl shadow-lg">
-
-<h2 class="text-center font-bold text-lg mb-4">
-Upload Bukti Pembayaran
-</h2>
-
-<form action="../auth/proses-upload.php" method="POST" enctype="multipart/form-data">
-    <input type="hidden" name="id_order" value="<?= $id_order ?>">
-
-    <input type="file" name="bukti" accept="image/*" required
-        class="w-full border p-3 rounded-lg mb-4">
-
-    <button type="submit"
-        class="w-full bg-emerald-500 text-white py-3 rounded-full">
-        Upload
-    </button>
-</form>
-
-<a href="../pembeli/invoice.php?id_order=<?= $id_order ?>"
-   class="block text-center mt-4 text-gray-500 hover:underline">
-   ← Kembali ke Invoice
-</a>
-
-</div>
+<?php foreach($penjualList as $id_penjual => $nama_penjual): ?>
+  <div style="margin-bottom: 20px;">
+      <h3>Untuk Penjual: <?= htmlspecialchars($nama_penjual) ?></h3>
+      <form action="proses-upload.php" method="post" enctype="multipart/form-data">
+          <input type="hidden" name="id_order" value="<?= $id_order ?>">
+          <input type="hidden" name="id_penjual" value="<?= $id_penjual ?>">
+          <input type="file" name="bukti" required>
+          <button type="submit">Upload</button>
+      </form>
+  </div>
+<?php endforeach; ?>
 
 </body>
 </html>

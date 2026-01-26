@@ -2,54 +2,67 @@
 session_start();
 require '../auth/connection.php';
 
+/* CEK LOGIN */
 if (!isset($_SESSION['id_user'])) {
-  header("Location: ../auth/login.php");
-  exit;
+    header("Location: ../auth/login.php");
+    exit;
+}
+
+/* CEK ROLE (WAJIB PEMBELI) */
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'pembeli') {
+    header("Location: ../auth/login.php");
+    exit;
 }
 
 $id_user = $_SESSION['id_user'];
 
-
-
-/* DATA USER LOGIN */
+/* =======================
+   DATA USER LOGIN
+======================= */
 $userResult = mysqli_query($conn, "
-  SELECT nama, image 
-  FROM users 
-  WHERE id_user = '$id_user'
+    SELECT nama, image
+    FROM users
+    WHERE id_user = '$id_user'
 ");
 
-// Cek apakah query user berhasil
 if ($userResult && mysqli_num_rows($userResult) > 0) {
-  $user = mysqli_fetch_assoc($userResult);
+    $user = mysqli_fetch_assoc($userResult);
 } else {
-  $user = ['nama' => 'User', 'image' => 'default.png'];
+    // fallback aman
+    $user = [
+        'nama'  => 'User',
+        'image' => 'default.png'
+    ];
 }
 
-/* DATA ORDER */
+/* =======================
+   DATA ORDER (HANYA MILIK PEMBELI LOGIN)
+======================= */
 $q = mysqli_query($conn, "
-  SELECT 
-    o.id_order,
-    o.status,
-    o.bukti_tf,
-    o.metode_pembayaran,
-    o.no_resi,
-    o.alamat_pembeli,
-    SUM(oi.qty) AS total_qty,
-    GROUP_CONCAT(p.nama_buku SEPARATOR ', ') AS buku
-  FROM orders o
-  JOIN order_details oi ON o.id_order = oi.id_order
-  JOIN produk p ON oi.id_produk = p.id_produk
-  WHERE o.id_pembeli = '$id_user'
-  GROUP BY o.id_order
-  ORDER BY o.created_at DESC
+    SELECT 
+        o.id_order,
+        o.status,
+        o.bukti_tf,
+        o.metode_pembayaran,
+        o.no_resi,
+        o.alamat_pembeli,
+        SUM(oi.qty) AS total_qty,
+        GROUP_CONCAT(p.nama_buku SEPARATOR ', ') AS buku
+    FROM orders o
+    JOIN order_details oi ON o.id_order = oi.id_order
+    JOIN produk p ON oi.id_produk = p.id_produk
+    WHERE o.id_pembeli = '$id_user'
+    GROUP BY o.id_order
+    ORDER BY o.created_at DESC
 ");
 
-// Cek apakah query order berhasil
+/* CEK QUERY */
 if (!$q) {
-  die("Query error: " . mysqli_error($conn));
+    die("Query error: " . mysqli_error($conn));
 }
 
 $total_orders = mysqli_num_rows($q);
+
 ?>
 
 <!DOCTYPE html>

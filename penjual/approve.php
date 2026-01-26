@@ -1,70 +1,131 @@
 <?php
+session_start();
 require '../auth/connection.php';
 
+if (!isset($_SESSION['id_user'])) {
+    die('SESSION id_user hilang');
+}
+
+if ($_SESSION['role'] !== 'penjual') {
+    die('Bukan penjual');
+}
+
+$id_penjual = $_SESSION['id_user'];
+
 /* ======================
-   HANDLE AKSI
+   APPROVE ORDER (KIRIM)
 ====================== */
-
-
-
-// APPROVE
 if (isset($_POST['approve'])) {
-  $id = $_POST['id'];
-  mysqli_query($conn, "
-    UPDATE orders 
-    SET status='dikirim' 
-    WHERE id_order='$id'
-  ");
-  header("Location: approve.php");
+    if (!isset($_POST['id_detail']) || !isset($_POST['id_order'])) {
+        header("Location: approve.php");
+        exit;
+    }
+
+    $id_detail = $_POST['id_detail'];
+    $id_order = $_POST['id_order'];
+
+    // cek apakah order ini punya produk milik penjual ini
+    $cek = mysqli_query($conn, "
+        SELECT COUNT(*) AS total
+        FROM order_details od
+        JOIN produk p ON p.id_produk = od.id_produk
+        WHERE od.id_order='$id_order'
+        AND p.id_penjual='$id_penjual'
+        AND od.id_detail='$id_detail'
+    ");
+
+    if ($cek) {
+        $data = mysqli_fetch_assoc($cek);
+        
+        if ($data['total'] > 0) {
+            // Update status order ke 'dikirim'
+            mysqli_query($conn, "
+                UPDATE orders o
+                JOIN order_details od ON o.id_order = od.id_order
+                SET o.status='dikirim'
+                WHERE o.id_order='$id_order'
+                AND od.id_detail='$id_detail'
+            ");
+        }
+    }
+
+    header("Location: approve.php");
+    exit;
 }
 
-// TOLAK
-if (isset($_POST['tolak'])) {
-  $id = $_POST['id'];
-  mysqli_query($conn, "
-    UPDATE orders 
-    SET status='refund', refund_at=NOW() 
-    WHERE id_order='$id'
-  ");
-  header("Location: approve.php");
+/* ======================
+   TOLAK / REFUND
+====================== */
+if (isset($_POST['tolak']) && isset($_POST['id_detail'])) {
+    $id_detail = $_POST['id_detail'];
+
+    mysqli_query($conn, "
+        UPDATE orders o
+        JOIN order_details od ON o.id_order = od.id_order
+        JOIN produk p ON p.id_produk = od.id_produk
+        SET o.status='refund',
+            o.refund_at = NOW()
+        WHERE od.id_detail='$id_detail'
+        AND p.id_penjual='$id_penjual'
+    ");
+
+    header("Location: approve.php");
+    exit;
 }
 
-// INPUT RESI
-// INPUT RESI + LINK LACAK
-if (isset($_POST['resi'])) {
-  $id   = $_POST['id'];
-  $resi = $_POST['no_resi'];
+/* ======================
+   INPUT RESI
+====================== */
+if (isset($_POST['resi']) && isset($_POST['id_detail'])) {
+    $id_detail = $_POST['id_detail'];
+    $resi = mysqli_real_escape_string($conn, $_POST['no_resi']);
+    $link_lacak = "https://tracking-dummy.com/lacak?resi=" . $resi;
 
-  // link lacak dummy (pura-pura)
-  $link_lacak = "https://tracking-dummy.com/lacak?resi=".$resi;
+    mysqli_query($conn, "
+        UPDATE orders o
+        JOIN order_details od ON o.id_order = od.id_order
+        JOIN produk p ON p.id_produk = od.id_produk
+        SET 
+            o.no_resi='$resi',
+            o.link_lacak='$link_lacak'
+        WHERE od.id_detail='$id_detail'
+        AND p.id_penjual='$id_penjual'
+    ");
 
-  mysqli_query($conn, "
-    UPDATE orders 
-    SET 
-      no_resi='$resi',
-      link_lacak='$link_lacak'
-    WHERE id_order='$id'
-  ");
-
-  header("Location: approve.php");
+    header("Location: approve.php");
+    exit;
 }
 
-
-// DELETE (setelah refund 1 menit)
+/* ======================
+   DELETE SETELAH REFUND
+====================== */
 if (isset($_GET['delete'])) {
-  $id = $_GET['delete'];
+    $id_detail = $_GET['delete'];
 
-  $cek = mysqli_query($conn, "
-    SELECT refund_at FROM orders 
-    WHERE id_order='$id'
-  ");
-  $data = mysqli_fetch_assoc($cek);
+    $cek = mysqli_query($conn, "
+        SELECT o.refund_at
+        FROM order_details od
+        JOIN orders o ON o.id_order = od.id_order
+        JOIN produk p ON p.id_produk = od.id_produk
+        WHERE od.id_detail='$id_detail'
+        AND p.id_penjual='$id_penjual'
+    ");
 
-  if (strtotime($data['refund_at']) <= time() - 60) {
-    mysqli_query($conn, "DELETE FROM orders WHERE id_order='$id'");
-  }
+    if ($cek) {
+        $data = mysqli_fetch_assoc($cek);
+        
+        if ($data && $data['refund_at'] && strtotime($data['refund_at']) <= time() - 60) {
+            mysqli_query($conn, "
+                DELETE od FROM order_details od
+                JOIN produk p ON p.id_produk = od.id_produk
+                WHERE od.id_detail='$id_detail'
+                AND p.id_penjual='$id_penjual'
+            ");
+        }
+    }
 
-  header("Location: approve.php");
+    header("Location: approve.php");
+    exit;
 }
 ?>
 
@@ -88,7 +149,7 @@ if (isset($_GET['delete'])) {
 
 <body class="bg-gray-50">
 <div class="flex min-h-screen">
-  <!-- Sidebar -->
+  <!-- Sidebar (tetap sama) -->
   <aside class="w-64 bg-white shadow-lg flex flex-col fixed h-full">
     <!-- LOGO -->
     <div class="p-6 border-b">
@@ -173,102 +234,137 @@ if (isset($_GET['delete'])) {
           <tbody>
             <?php
             $q = mysqli_query($conn, "
-              SELECT o.*, od.qty, od.nama_buku
-              FROM orders o
-              JOIN order_details od ON od.id_order = o.id_order
-              ORDER BY o.id_order DESC
+                SELECT 
+                    od.id_detail,
+                    od.qty,
+                    od.nama_buku,
+                    o.id_order,
+                    o.status,
+                    o.no_resi,
+                    o.link_lacak,
+                    o.refund_at,
+                    o.kode_pesanan,
+                    o.metode_pembayaran,
+                    o.bukti_tf
+                FROM order_details od
+                JOIN orders o ON o.id_order = od.id_order
+                JOIN produk p ON p.id_produk = od.id_produk
+                WHERE p.id_penjual = '$id_penjual'
+                ORDER BY o.id_order DESC
             ");
-
-            while ($o = mysqli_fetch_assoc($q)) {
-              // Determine status badge class
-              $statusClass = '';
-              switch($o['status']) {
-                case 'menunggu_verifikasi': $statusClass = 'status-waiting'; break;
-                case 'dikirim': $statusClass = 'status-shipped'; break;
-                case 'refund': $statusClass = 'status-refund'; break;
-                case 'selesai': $statusClass = 'status-completed'; break;
-                default: $statusClass = 'bg-gray-100 text-gray-800';
-              }
+            
+            if ($q && mysqli_num_rows($q) > 0) {
+                while ($o = mysqli_fetch_assoc($q)) {
+                    // Determine status badge class
+                    $statusClass = '';
+                    switch($o['status']) {
+                        case 'menunggu_verifikasi': $statusClass = 'status-waiting'; break;
+                        case 'dikirim': $statusClass = 'status-shipped'; break;
+                        case 'refund': $statusClass = 'status-refund'; break;
+                        case 'selesai': $statusClass = 'status-completed'; break;
+                        default: $statusClass = 'bg-gray-100 text-gray-800';
+                    }
+                    
+                    // Parse bukti TF
+                    $bukti = null;
+                    if (!empty($o['bukti_tf'])) {
+                        $bukti_arr = json_decode($o['bukti_tf'], true);
+                        if ($bukti_arr && isset($bukti_arr[$id_penjual]['file'])) {
+                            $bukti = $bukti_arr[$id_penjual]['file'];
+                        }
+                    }
             ?>
             <tr class="border-b hover:bg-gray-50">
               <td class="p-4">
-                <span class="font-medium text-gray-800"><?= $o['kode_pesanan'] ?></span>
+                <span class="font-medium text-gray-800"><?= htmlspecialchars($o['kode_pesanan']) ?></span>
               </td>
-              <td class="p-4 text-gray-800"><?= $o['nama_buku'] ?></td>
+              <td class="p-4 text-gray-800"><?= htmlspecialchars($o['nama_buku']) ?></td>
               <td class="p-4">
                 <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
-                  <?= $o['qty'] ?>
+                  <?= htmlspecialchars($o['qty']) ?>
                 </span>
               </td>
               <td class="p-4">
-                <a href="../img/bukti/<?= $o['bukti_tf'] ?>" target="_blank" 
-                   class="text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-1">
-                  <i class="fas fa-eye text-sm"></i>
-                  <span class="text-sm">Lihat</span>
+                <?php if ($bukti): ?>
+                <a href="../img/bukti/<?= htmlspecialchars($bukti) ?>" target="_blank"
+                   class="text-indigo-600 hover:underline flex items-center gap-1">
+                   <i class="fas fa-eye text-sm"></i> Lihat
                 </a>
+                <?php else: ?>
+                <span class="text-gray-400 text-sm">Belum ada</span>
+                <?php endif; ?>
               </td>
-              <td class="p-4 text-gray-700"><?= $o['metode_pembayaran'] ?></td>
+              <td class="p-4 text-gray-700"><?= htmlspecialchars($o['metode_pembayaran']) ?></td>
               <td class="p-4">
                 <span class="status-badge <?= $statusClass ?>">
-                  <?= ucfirst(str_replace('_', ' ', $o['status'])) ?>
+                  <?= htmlspecialchars(ucfirst(str_replace('_', ' ', $o['status']))) ?>
                 </span>
               </td>
               <td class="p-4">
-  <?php if($o['no_resi']) { ?>
-  <a href="../auth/track.php?resi=<?= $o['no_resi'] ?>"
-     target="_blank"
-     class="text-indigo-600 hover:underline text-sm">
-     Lacak Pesanan
-  </a>
-<?php } ?>
-
-</td>
-
+                <?php if($o['no_resi']) { ?>
+                <a href="../auth/track.php?resi=<?= urlencode($o['no_resi']) ?>"
+                   target="_blank"
+                   class="text-indigo-600 hover:underline text-sm">
+                   Lacak Pesanan
+                </a>
+                <?php } else { ?>
+                <span class="text-gray-400 text-sm">Belum ada</span>
+                <?php } ?>
+              </td>
               <td class="p-4">
                 <div class="flex flex-wrap gap-2">
-                  <?php if ($o['status']=='menunggu_verifikasi') { ?>
-                    <form method="post" class="inline">
-                      <input type="hidden" name="id" value="<?= $o['id_order'] ?>">
-                      <button name="approve" 
-                              class="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 flex items-center gap-1">
-                        <i class="fas fa-check text-xs"></i>
-                        Approve
+                  <?php if ($o['status'] == 'menunggu_verifikasi') { ?>
+                    <!-- APPROVE -->
+                    <form method="post" action="approve.php">
+                      <input type="hidden" name="id_detail" value="<?= $o['id_detail'] ?>">
+                      <input type="hidden" name="id_order" value="<?= $o['id_order'] ?>">
+                      <button type="submit" name="approve"
+                        class="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 flex items-center gap-1">
+                        <i class="fas fa-check text-xs"></i> Approve
                       </button>
                     </form>
-                    <form method="post" class="inline">
-                      <input type="hidden" name="id" value="<?= $o['id_order'] ?>">
-                      <button name="tolak" 
-                              class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 flex items-center gap-1">
-                        <i class="fas fa-times text-xs"></i>
-                        Tolak
+
+                    <!-- TOLAK -->
+                    <form method="post" action="approve.php">
+                      <input type="hidden" name="id_detail" value="<?= $o['id_detail'] ?>">
+                      <button type="submit" name="tolak"
+                        class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 flex items-center gap-1">
+                        <i class="fas fa-times text-xs"></i> Tolak
                       </button>
                     </form>
                   <?php } ?>
 
-                  <?php if ($o['status']=='dikirim' && empty($o['no_resi'])) { ?>
-                    <form method="post" class="flex items-center gap-2">
-                      <input type="hidden" name="id" value="<?= $o['id_order'] ?>">
-                      <input type="text" name="no_resi" placeholder="No Resi" 
-                             class="border border-gray-300 px-3 py-1.5 rounded-lg text-sm w-32 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                      <button name="resi" 
-                              class="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 flex items-center gap-1">
-                        <i class="fas fa-save text-xs"></i>
-                        Simpan
+                  <?php if ($o['status'] == 'dikirim' && empty($o['no_resi'])) { ?>
+                    <!-- INPUT RESI -->
+                    <form method="post" action="approve.php" class="flex items-center gap-2">
+                      <input type="hidden" name="id_detail" value="<?= $o['id_detail'] ?>">
+                      <input type="text" name="no_resi" placeholder="No Resi"
+                        class="border border-gray-300 px-3 py-1.5 rounded-lg text-sm w-32 focus:ring-2 focus:ring-indigo-500"
+                        required>
+                      <button type="submit" name="resi"
+                        class="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 flex items-center gap-1">
+                        <i class="fas fa-save text-xs"></i> Simpan
                       </button>
                     </form>
                   <?php } ?>
 
-                  <?php
-                  if ($o['status']=='refund' && strtotime($o['refund_at']) <= time()-60) {
-                  ?>
-                    <a href="?delete=<?= $o['id_order'] ?>" 
+                  <?php if ($o['status'] == 'refund' && $o['refund_at'] && strtotime($o['refund_at']) <= time() - 60) { ?>
+                    <a href="approve.php?delete=<?= $o['id_detail'] ?>"
                        onclick="return confirm('Yakin hapus pesanan ini?')"
                        class="px-3 py-1.5 bg-gray-700 text-white rounded-lg text-sm hover:bg-gray-800 flex items-center gap-1">
-                      <i class="fas fa-trash-alt text-xs"></i>
-                      Delete
+                      <i class="fas fa-trash-alt text-xs"></i> Delete
                     </a>
                   <?php } ?>
                 </div>
+              </td>
+            </tr>
+            <?php 
+                }
+            } else {
+            ?>
+            <tr>
+              <td colspan="8" class="p-4 text-center text-gray-500">
+                Tidak ada pesanan yang perlu disetujui.
               </td>
             </tr>
             <?php } ?>
