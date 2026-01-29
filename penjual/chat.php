@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $chatWith > 0 && $id_produk > 0) {
 /* ================== NAMA PEMBELI ================== */
 $pembeli_nama = '';
 if ($chatWith > 0) {
-    $q = mysqli_query($conn, "SELECT nama FROM users WHERE id_user='$chatWith'");
+    $q = mysqli_query ($conn, "SELECT nama FROM users WHERE id_user='$chatWith'");
     if ($r = mysqli_fetch_assoc($q)) {
         $pembeli_nama = $r['nama'];
     }
@@ -415,7 +415,7 @@ $inboxQuery = mysqli_query($conn, "
             if (<?= $chatWith ?>) {
                 location.reload();
             }
-        }, 10000);
+        }, 50000);
     </script>
 </body>
 </html>

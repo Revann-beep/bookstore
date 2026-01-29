@@ -13,7 +13,7 @@ if ($_SESSION['role'] !== 'penjual') {
 $id_penjual = $_SESSION['id_user'];
 
 /* ======================
-   APPROVE ORDER (KIRIM)
+   APPROVE ORDER (PER PENJUAL)
 ====================== */
 if (isset($_POST['approve'])) {
     if (!isset($_POST['id_detail']) || !isset($_POST['id_order'])) {
@@ -22,29 +22,46 @@ if (isset($_POST['approve'])) {
     }
 
     $id_detail = $_POST['id_detail'];
-    $id_order = $_POST['id_order'];
+    $id_order  = $_POST['id_order'];
 
-    // cek apakah order ini punya produk milik penjual ini
+    // pastikan produk milik penjual ini
     $cek = mysqli_query($conn, "
         SELECT COUNT(*) AS total
         FROM order_details od
         JOIN produk p ON p.id_produk = od.id_produk
-        WHERE od.id_order='$id_order'
+        WHERE od.id_detail='$id_detail'
         AND p.id_penjual='$id_penjual'
-        AND od.id_detail='$id_detail'
     ");
 
-    if ($cek) {
-        $data = mysqli_fetch_assoc($cek);
-        
-        if ($data['total'] > 0) {
-            // Update status order ke 'dikirim'
+    $c = mysqli_fetch_assoc($cek);
+
+    if ($c['total'] > 0) {
+
+        // approve hanya detail milik penjual ini
+        mysqli_query($conn, "
+            UPDATE order_details od
+            JOIN produk p ON p.id_produk = od.id_produk
+            SET od.status_detail='approved'
+            WHERE od.id_detail='$id_detail'
+            AND p.id_penjual='$id_penjual'
+        ");
+
+        // cek apakah semua penjual sudah approve
+        $cek_all = mysqli_query($conn, "
+            SELECT COUNT(*) AS sisa
+            FROM order_details
+            WHERE id_order='$id_order'
+            AND status_detail!='approved'
+        ");
+
+        $all = mysqli_fetch_assoc($cek_all);
+
+        // kalau semua sudah approve → siap kirim
+        if ($all['sisa'] == 0) {
             mysqli_query($conn, "
-                UPDATE orders o
-                JOIN order_details od ON o.id_order = od.id_order
-                SET o.status='dikirim'
-                WHERE o.id_order='$id_order'
-                AND od.id_detail='$id_detail'
+                UPDATE orders
+                SET status='siap_dikirim'
+                WHERE id_order='$id_order'
             ");
         }
     }
@@ -60,11 +77,13 @@ if (isset($_POST['tolak']) && isset($_POST['id_detail'])) {
     $id_detail = $_POST['id_detail'];
 
     mysqli_query($conn, "
-        UPDATE orders o
-        JOIN order_details od ON o.id_order = od.id_order
+        UPDATE order_details od
         JOIN produk p ON p.id_produk = od.id_produk
-        SET o.status='refund',
-            o.refund_at = NOW()
+        JOIN orders o ON o.id_order = od.id_order
+        SET 
+            od.status='refund',
+            o.status='refund',
+            o.refund_at=NOW()
         WHERE od.id_detail='$id_detail'
         AND p.id_penjual='$id_penjual'
     ");
@@ -74,22 +93,45 @@ if (isset($_POST['tolak']) && isset($_POST['id_detail'])) {
 }
 
 /* ======================
-   INPUT RESI
+   INPUT RESI (GLOBAL & TERKUNCI)
 ====================== */
 if (isset($_POST['resi']) && isset($_POST['id_detail'])) {
     $id_detail = $_POST['id_detail'];
+
+    // ambil id_order
+    $q = mysqli_query($conn, "
+        SELECT id_order FROM order_details WHERE id_detail='$id_detail'
+    ");
+    $o = mysqli_fetch_assoc($q);
+    $id_order = $o['id_order'];
+
+    // cek apakah semua penjual sudah approve
+    $cek = mysqli_query($conn, "
+        SELECT COUNT(*) AS sisa
+        FROM order_details
+        WHERE id_order='$id_order'
+        AND status!='approved'
+    ");
+
+    $c = mysqli_fetch_assoc($cek);
+
+    if ($c['sisa'] > 0) {
+        // masih ada penjual lain belum approve
+        header("Location: approve.php?error=belum_semua_approve");
+        exit;
+    }
+
+    // simpan resi
     $resi = mysqli_real_escape_string($conn, $_POST['no_resi']);
-    $link_lacak = "https://tracking-dummy.com/lacak?resi=" . $resi;
+    $link_lacak = "https://tracking-dummy.com/lacak?resi=".$resi;
 
     mysqli_query($conn, "
-        UPDATE orders o
-        JOIN order_details od ON o.id_order = od.id_order
-        JOIN produk p ON p.id_produk = od.id_produk
+        UPDATE orders
         SET 
-            o.no_resi='$resi',
-            o.link_lacak='$link_lacak'
-        WHERE od.id_detail='$id_detail'
-        AND p.id_penjual='$id_penjual'
+            no_resi='$resi',
+            link_lacak='$link_lacak',
+            status='dikirim'
+        WHERE id_order='$id_order'
     ");
 
     header("Location: approve.php");
@@ -105,23 +147,21 @@ if (isset($_GET['delete'])) {
     $cek = mysqli_query($conn, "
         SELECT o.refund_at
         FROM order_details od
-        JOIN orders o ON o.id_order = od.id_order
         JOIN produk p ON p.id_produk = od.id_produk
+        JOIN orders o ON o.id_order = od.id_order
         WHERE od.id_detail='$id_detail'
         AND p.id_penjual='$id_penjual'
     ");
 
-    if ($cek) {
-        $data = mysqli_fetch_assoc($cek);
-        
-        if ($data && $data['refund_at'] && strtotime($data['refund_at']) <= time() - 60) {
-            mysqli_query($conn, "
-                DELETE od FROM order_details od
-                JOIN produk p ON p.id_produk = od.id_produk
-                WHERE od.id_detail='$id_detail'
-                AND p.id_penjual='$id_penjual'
-            ");
-        }
+    $d = mysqli_fetch_assoc($cek);
+
+    if ($d && strtotime($d['refund_at']) <= time() - 60) {
+        mysqli_query($conn, "
+            DELETE od FROM order_details od
+            JOIN produk p ON p.id_produk = od.id_produk
+            WHERE od.id_detail='$id_detail'
+            AND p.id_penjual='$id_penjual'
+        ");
     }
 
     header("Location: approve.php");
