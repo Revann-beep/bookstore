@@ -2,6 +2,21 @@
 session_start();
 require '../auth/connection.php';
 
+/* ======================
+   FUNCTION GLOBAL
+====================== */
+function semuaPenjualSudahApprove($conn, $id_order) {
+    $q = mysqli_query($conn, "
+        SELECT COUNT(*) AS sisa
+        FROM order_details
+        WHERE id_order='$id_order'
+        AND status_detail!='approved'
+    ");
+    $c = mysqli_fetch_assoc($q);
+    return $c['sisa'] == 0;
+}
+
+
 if (!isset($_SESSION['id_user'])) {
     die('SESSION id_user hilang');
 }
@@ -95,8 +110,9 @@ if (isset($_POST['tolak']) && isset($_POST['id_detail'])) {
 /* ======================
    INPUT RESI (GLOBAL & TERKUNCI)
 ====================== */
-if (isset($_POST['resi']) && isset($_POST['id_detail'])) {
+if (isset($_POST['resi'])) {
     $id_detail = $_POST['id_detail'];
+    $resi = mysqli_real_escape_string($conn, $_POST['no_resi']);
 
     // ambil id_order
     $q = mysqli_query($conn, "
@@ -105,33 +121,21 @@ if (isset($_POST['resi']) && isset($_POST['id_detail'])) {
     $o = mysqli_fetch_assoc($q);
     $id_order = $o['id_order'];
 
-    // cek apakah semua penjual sudah approve
-    $cek = mysqli_query($conn, "
-        SELECT COUNT(*) AS sisa
-        FROM order_details
-        WHERE id_order='$id_order'
-        AND status!='approved'
-    ");
-
-    $c = mysqli_fetch_assoc($cek);
-
-    if ($c['sisa'] > 0) {
-        // masih ada penjual lain belum approve
+    // ❌ TOLAK kalau belum semua approve
+    if (!semuaPenjualSudahApprove($conn, $id_order)) {
         header("Location: approve.php?error=belum_semua_approve");
         exit;
     }
 
-    // simpan resi
-    $resi = mysqli_real_escape_string($conn, $_POST['no_resi']);
-    $link_lacak = "https://tracking-dummy.com/lacak?resi=".$resi;
-
+    // simpan resi (HANYA SEKALI)
     mysqli_query($conn, "
         UPDATE orders
         SET 
             no_resi='$resi',
-            link_lacak='$link_lacak',
+            link_lacak='https://tracking-dummy.com/lacak?resi=$resi',
             status='dikirim'
         WHERE id_order='$id_order'
+        AND no_resi IS NULL
     ");
 
     header("Location: approve.php");
@@ -374,7 +378,7 @@ if (isset($_GET['delete'])) {
                     </form>
                   <?php } ?>
 
-                  <?php if ($o['status'] == 'dikirim' && empty($o['no_resi'])) { ?>
+                  <?php if (semuaPenjualSudahApprove($conn, $o['id_order']) && empty($o['no_resi'])) { ?>
                     <!-- INPUT RESI -->
                     <form method="post" action="approve.php" class="flex items-center gap-2">
                       <input type="hidden" name="id_detail" value="<?= $o['id_detail'] ?>">

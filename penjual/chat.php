@@ -49,22 +49,22 @@ if ($chatWith && $id_produk) {
 }
 
 /* ================== CHAT HISTORY ================== */
-$chat = [];
-if ($chatWith && $id_produk) {
-    $qChat = mysqli_query($conn, "
-        SELECT * FROM messages
-        WHERE id_produk='$id_produk'
-        AND (
-            (sender_id='$penjual_id' AND receiver_id='$chatWith')
-            OR
-            (sender_id='$chatWith' AND receiver_id='$penjual_id')
-        )
-        ORDER BY created_at ASC
-    ");
-    while ($row = mysqli_fetch_assoc($qChat)) {
-        $chat[] = $row;
-    }
-}
+// $chat = [];
+// if ($chatWith && $id_produk) {
+//     $qChat = mysqli_query($conn, "
+//         SELECT * FROM messages
+//         WHERE id_produk='$id_produk'
+//         AND (
+//             (sender_id='$penjual_id' AND receiver_id='$chatWith')
+//             OR
+//             (sender_id='$chatWith' AND receiver_id='$penjual_id')
+//         )
+//         ORDER BY created_at ASC
+//     ");
+//     while ($row = mysqli_fetch_assoc($qChat)) {
+//         $chat[] = $row;
+//     }
+// }
 
 $inboxQuery = mysqli_query($conn, "
     SELECT 
@@ -290,7 +290,8 @@ $inboxQuery = mysqli_query($conn, "
                 </div>
 
                 <!-- CHAT MESSAGES -->
-                <div class="flex-1 p-6 overflow-y-auto chat-container scrollbar-thin space-y-4 bg-gray-50">
+                <div id="chat-box"
+     class="flex-1 p-6 overflow-y-auto chat-container scrollbar-thin space-y-4 bg-gray-50">
                     <?php if(empty($chat)): ?>
                         <div class="h-full flex flex-col items-center justify-center">
                             <div class="w-24 h-24 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-full flex items-center justify-center mb-4">
@@ -400,22 +401,57 @@ $inboxQuery = mysqli_query($conn, "
 
     <!-- Auto scroll to bottom -->
     <script>
-        function scrollToBottom() {
-            const chatContainer = document.querySelector('.chat-container');
-            if (chatContainer) {
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }
-        }
-        
-        // Scroll saat halaman dimuat
-        document.addEventListener('DOMContentLoaded', scrollToBottom);
-        
-        // Auto refresh chat setiap 5 detik
-        setInterval(() => {
-            if (<?= $chatWith ?>) {
-                location.reload();
-            }
-        }, 50000);
-    </script>
+const chatBox = document.getElementById('chat-box');
+
+if (!chatBox) {
+    console.error('chat-box tidak ditemukan');
+}
+
+const penjualId = <?= (int)$penjual_id ?>;
+const chatWith  = <?= (int)$chatWith ?>;
+const idProduk  = <?= (int)$id_produk ?>;
+
+function scrollBottom() {
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function loadChat() {
+    fetch(`fetch_chat.php?user=${chatWith}&id_produk=${idProduk}`)
+        .then(res => res.json())
+        .then(data => {
+            let html = '';
+            data.forEach(msg => {
+                if (msg.sender_id == penjualId) {
+                    html += `
+                    <div class="flex justify-end">
+                        <div class="max-w-lg">
+                            <div class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4 message-right shadow">
+                                ${msg.message}
+                            </div>
+                        </div>
+                    </div>`;
+                } else {
+                    html += `
+                    <div class="flex justify-start">
+                        <div class="max-w-lg">
+                            <div class="bg-white p-4 message-left border shadow">
+                                ${msg.message}
+                            </div>
+                        </div>
+                    </div>`;
+                }
+            });
+            chatBox.innerHTML = html;
+            scrollBottom();
+        })
+        .catch(err => console.error('Fetch error:', err));
+}
+
+// jalankan hanya kalau chat aktif
+if (chatWith && idProduk) {
+    loadChat();
+    setInterval(loadChat, 2000);
+}
+</script>
 </body>
 </html>

@@ -4,13 +4,13 @@ require '../auth/connection.php';
 
 /* CEK LOGIN */
 if (!isset($_SESSION['id_user'])) {
-    header("Location: ../auth/login.php");
+    header("Location: ../auth/index.php");
     exit;
 }
 
 /* CEK ROLE (WAJIB PEMBELI) */
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'pembeli') {
-    header("Location: ../auth/login.php");
+    header("Location: ../index.php");
     exit;
 }
 

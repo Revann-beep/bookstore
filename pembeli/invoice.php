@@ -4,7 +4,7 @@ require '../auth/connection.php';
 
 // Validasi session dan parameter
 if (!isset($_SESSION['id_user'])) {
-    header("Location: ../auth/login.php");
+    header("Location: ../index.php");
     exit;
 }
 

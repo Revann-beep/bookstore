@@ -264,7 +264,7 @@ $hari = $hari_indo[$hari];
             
             <div class="p-4 border-t">
               <a href="chat.php?user=<?= $row['id_user'] ?>&id_produk=<?= $row['id_produk'] ?>"> 
-                 class="block text-center text-indigo-600 hover:text-indigo-800 font-medium flex items-center justify-center gap-1">
+                 <class="block text-center text-indigo-600 hover:text-indigo-800 font-medium flex items-center justify-center gap-1">
                 <span>Lihat semua pesan</span>
                 <i class="fas fa-arrow-right text-sm"></i>
               </a>
