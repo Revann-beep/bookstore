@@ -69,6 +69,57 @@ $data = mysqli_query($conn, $sql);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
+<style>
+@media print {
+
+    /* SEMBUNYIKAN YANG TIDAK PERLU */
+    aside,
+    .no-print {
+        display: none !important;
+    }
+
+    /* SET KERTAS */
+    @page {
+        size: A4 landscape;
+        margin: 10mm;
+    }
+
+    body {
+        background: white !important;
+        font-size: 10px;
+        color: black;
+    }
+
+    main {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* TABEL */
+    table {
+        width: 100% !important;
+        border-collapse: collapse;
+        table-layout: fixed; /* PENTING */
+    }
+
+    th, td {
+        border: 1px solid #000 !important;
+        padding: 4px !important;
+        font-size: 9px;
+        word-wrap: break-word;
+        word-break: break-word;
+        white-space: normal !important;
+        text-align: left;
+    }
+
+    th {
+        background: #f3f4f6 !important;
+        font-weight: bold;
+    }
+
+}
+</style>
+
 <body class="bg-gray-50">
 <div class="flex min-h-screen">
     <!-- SIDEBAR -->
@@ -172,6 +223,10 @@ $data = mysqli_query($conn, $sql);
                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2">
                         <i class="fas fa-download"></i> Download CSV
                     </a>
+                    <button onclick="downloadPDF()"
+    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2">
+    <i class="fas fa-file-pdf"></i> Download PDF
+</button>
                     <a href="grafik.php?bulan=<?= $bulan ?>&tahun=<?= $tahun ?>" 
                        class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2">
                         <i class="fas fa-chart-bar"></i> Lihat Grafik
@@ -209,7 +264,26 @@ $data = mysqli_query($conn, $sql);
                                             <?= $row['qty'] ?>
                                         </span>
                                     </td>
-                                    <td class="p-4 text-gray-600"><?= htmlspecialchars($row['bukti_tf']) ?></td>
+                                    <td class="p-4">
+<?php
+$bukti = json_decode($row['bukti_tf'], true);
+
+if (is_array($bukti)) {
+    foreach ($bukti as $item) {
+        $file = $item['file'];
+        ?>
+        <a href="../img/bukti/<?= $file ?>"
+           target="_blank"
+           class="inline-flex items-center gap-2 px-3 py-1 mb-1 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200">
+            <i class="fas fa-file-pdf"></i> Download
+        </a>
+        <?php
+    }
+} else {
+    echo '<span class="text-gray-400">Tidak ada</span>';
+}
+?>
+</td>
                                     <td class="p-4 text-gray-600"><?= htmlspecialchars($row['metode_pembayaran']) ?></td>
                                     <td class="p-4 text-gray-700">Rp <?= number_format($row['total_modal']) ?></td>
                                     <td class="p-4 text-gray-800 font-medium">Rp <?= number_format($row['total_penjualan']) ?></td>
@@ -259,5 +333,11 @@ $data = mysqli_query($conn, $sql);
         <?php endif; ?>
     </main>
 </div>
+
+<script>
+function downloadPDF() {
+    window.print();
+}
+</script>
 </body>
 </html>

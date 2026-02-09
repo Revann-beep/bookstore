@@ -327,11 +327,11 @@ function getStatus($last_activity, $status) {
                     </a>
                     
                     <!-- Tombol Hapus DISABLED -->
-                    <button class="flex-1 bg-white border border-gray-300 text-gray-500 px-4 py-2.5 rounded-xl font-medium text-center disabled-btn flex items-center justify-center gap-2"
+                    <!-- <button class="flex-1 bg-white border border-gray-300 text-gray-500 px-4 py-2.5 rounded-xl font-medium text-center disabled-btn flex items-center justify-center gap-2"
                             title="Hanya Super Admin yang dapat menghapus penjual">
                        <i class="fas fa-trash"></i>
                        <span>Hapus</span>
-                    </button>
+                    </button> -->
                 </div>
             </div>
             <?php endwhile; ?>

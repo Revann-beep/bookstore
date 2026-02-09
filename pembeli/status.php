@@ -41,19 +41,20 @@ if ($userResult && mysqli_num_rows($userResult) > 0) {
 $q = mysqli_query($conn, "
     SELECT 
         o.id_order,
-        o.status,
+        o.status AS status_order,
         o.bukti_tf,
         o.metode_pembayaran,
         o.no_resi,
         o.alamat_pembeli,
-        SUM(oi.qty) AS total_qty,
-        GROUP_CONCAT(p.nama_buku SEPARATOR ', ') AS buku
+        od.id_detail,
+        od.qty,
+        od.status_detail,
+        p.nama_buku
     FROM orders o
-    JOIN order_details oi ON o.id_order = oi.id_order
-    JOIN produk p ON oi.id_produk = p.id_produk
+    JOIN order_details od ON o.id_order = od.id_order
+    JOIN produk p ON od.id_produk = p.id_produk
     WHERE o.id_pembeli = '$id_user'
-    GROUP BY o.id_order
-    ORDER BY o.created_at DESC
+    ORDER BY o.created_at DESC, od.id_detail ASC
 ");
 
 /* CEK QUERY */
@@ -178,11 +179,11 @@ $total_orders = mysqli_num_rows($q);
     $total_orders = mysqli_num_rows($q);
     $pending = 0; $menunggu_verifikasi = 0; $paid = 0; $dikirim = 0; $refund = 0;
     while ($d = mysqli_fetch_assoc($q)) {
-      if ($d['status'] == 'pending') $pending++;
-      if ($d['status'] == 'menunggu_verifikasi') $pending++;
-      if ($d['status'] == 'paid') $paid++;
-      if ($d['status'] == 'dikirim') $dikirim++;
-      if ($d['status'] == 'refund') $refund++;
+      if ($d['status_order'] == 'pending') $pending++;
+      if ($d['status_order'] == 'menunggu_verifikasi') $pending++;
+      if ($d['status_order'] == 'paid') $paid++;
+      if ($d['status_order'] == 'dikirim') $dikirim++;
+      if ($d['status_order'] == 'refund') $refund++;
     }
     mysqli_data_seek($q, 0);
     ?>
@@ -299,7 +300,7 @@ $total_orders = mysqli_num_rows($q);
             </td>
             
             <td class="py-4 px-6">
-              <div class="font-medium text-slate-800"><?= htmlspecialchars(mb_strimwidth($d['buku'], 0, 50, '...')) ?></div>
+              <div class="font-medium text-slate-800"><?= htmlspecialchars(mb_strimwidth($d['nama_buku'], 0, 50, '...')) ?></div>
             </td>
             
             <td class="py-4 px-6">
@@ -308,7 +309,7 @@ $total_orders = mysqli_num_rows($q);
                   <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
                   <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" />
                 </svg>
-                <?= $d['total_qty'] ?> item
+                <?= $d['qty'] ?> item
               </div>
             </td>
             
@@ -341,24 +342,24 @@ $total_orders = mysqli_num_rows($q);
                 'refund' => 'bg-purple-100 text-purple-800 border-purple-200'
               ];
               ?>
-              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium border <?= $statusColors[$d['status']] ?>">
-                <?php if ($d['status'] == 'pending'): ?>
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium border <?= $statusColors[$d['status_order']] ?>">
+                <?php if ($d['status_order'] == 'pending'): ?>
                   <div class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
-                <?php elseif ($d['status'] == 'menunggu_verifikasi'): ?>
+                <?php elseif ($d['status_order'] == 'menunggu_verifikasi'): ?>
                   <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
-                <?php elseif ($d['status'] == 'paid'): ?>
+                <?php elseif ($d['status_order'] == 'paid'): ?>
                   <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                <?php elseif ($d['status'] == 'dikirim'): ?>
+                <?php elseif ($d['status_order'] == 'dikirim'): ?>
                   <div class="w-2 h-2 rounded-full bg-blue-500"></div>
-                <?php elseif ($d['status'] == 'refund'): ?>
+                <?php elseif ($d['status_order'] == 'refund'): ?>
                   <div class="w-2 h-2 rounded-full bg-blue-500"></div>
                 <?php else: ?>
                   <div class="w-2 h-2 rounded-full bg-purple-500"></div>
                 <?php endif; ?>
-                <?= ucfirst($d['status']) ?>
+                <?= ucfirst($d['status_order']) ?>
               </div>
               <div class="text-xs text-slate-500 mt-1">
-                <?= $d['status'] == 'paid' ? 'Disetujui' : 'Menunggu' ?>
+                <?= $d['status_order'] == 'paid' ? 'Disetujui' : 'Menunggu' ?>
               </div>
             </td>
             
@@ -375,7 +376,7 @@ $total_orders = mysqli_num_rows($q);
                 </a>
 
                 <!-- Upload Bukti -->
-                <?php if ($d['status']=='pending' && !$d['bukti_tf']): ?>
+                <?php if ($d['status_order']=='pending' && !$d['bukti_tf']): ?>
                   <a href="../auth/upload-bukti.php?id_order=<?= $d['id_order'] ?>"
                      class="flex items-center gap-1 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-lg text-sm font-medium transition-all duration-300 shadow hover:shadow-lg">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">

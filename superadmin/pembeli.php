@@ -272,10 +272,10 @@ function getStatus($last_activity) {
                             <i class="fas fa-ellipsis-v text-gray-500"></i>
                         </button>
                         <div class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-10 hidden group-hover:block">
-                            <a href="detail_pembeli.php?id=<?= $row['id_user'] ?>" 
+                            <a href="edit_akun.php?id=<?= $row['id_user'] ?>" 
                                class="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-indigo-50">
                                <i class="fas fa-eye text-blue-500"></i>
-                               <span>Detail Pembeli</span>
+                               <span>Edit Pembeli</span>
                             </a>
                             <a href="?hapus=<?= $row['id_user'] ?>" 
                                onclick="return confirm('Yakin hapus pembeli <?= htmlspecialchars($row['nama']) ?>?')"
@@ -322,10 +322,10 @@ function getStatus($last_activity) {
                 
                 <!-- Action Buttons -->
                 <div class="mt-6 flex gap-2">
-                    <a href="detail_pembeli.php?id=<?= $row['id_user'] ?>" 
+                    <a href="editp.php?id=<?= $row['id_user'] ?>" 
                        class="flex-1 gradient-accent text-white px-4 py-2.5 rounded-xl font-medium text-center hover:shadow-lg transition-shadow flex items-center justify-center gap-2">
                        <i class="fas fa-eye"></i>
-                       <span>Detail</span>
+                       <span>Edit</span>
                     </a>
                     <a href="?hapus=<?= $row['id_user'] ?>" 
                        onclick="return confirm('Yakin hapus pembeli <?= htmlspecialchars($row['nama']) ?>?')"

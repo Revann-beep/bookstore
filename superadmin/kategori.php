@@ -28,31 +28,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // TAMBAH
-    if ($_POST['action'] === 'tambah') {
-        mysqli_query($conn, "INSERT INTO kategori (nama_kategori, icon)
-                             VALUES ('$nama', '$icon')");
+if ($_POST['action'] === 'tambah') {
+
+    // CEK DUPLIKAT NAMA
+    $cek = mysqli_query($conn, "
+        SELECT id_kategori 
+        FROM kategori 
+        WHERE nama_kategori = '$nama'
+    ");
+
+    if (mysqli_num_rows($cek) > 0) {
+        echo "<script>
+            alert('Nama kategori sudah digunakan!');
+            window.location='kategori.php';
+        </script>";
+        exit;
     }
+
+    mysqli_query($conn, "
+        INSERT INTO kategori (nama_kategori, icon)
+        VALUES ('$nama', '$icon')
+    ");
+}
 
     // UPDATE
-    if ($_POST['action'] === 'update') {
-        $id = $_POST['id_kategori'];
+    // UPDATE
+if ($_POST['action'] === 'update') {
+    $id = $_POST['id_kategori'];
 
-        if ($icon) {
-            // hapus icon lama
-            $old = mysqli_fetch_assoc(mysqli_query($conn, "SELECT icon FROM kategori WHERE id_kategori='$id'"));
-            if ($old['icon'] && file_exists("../img/kategori/" . $old['icon'])) {
-                unlink("../img/kategori/" . $old['icon']);
-            }
+    // CEK DUPLIKAT NAMA (KECUALI ID SENDIRI)
+    $cek = mysqli_query($conn, "
+        SELECT id_kategori 
+        FROM kategori 
+        WHERE nama_kategori = '$nama'
+        AND id_kategori != '$id'
+    ");
 
-            mysqli_query($conn, "UPDATE kategori 
-                                 SET nama_kategori='$nama', icon='$icon'
-                                 WHERE id_kategori='$id'");
-        } else {
-            mysqli_query($conn, "UPDATE kategori 
-                                 SET nama_kategori='$nama'
-                                 WHERE id_kategori='$id'");
-        }
+    if (mysqli_num_rows($cek) > 0) {
+        echo "<script>
+            alert('Nama kategori sudah digunakan kategori lain!');
+            window.location='kategori.php?edit=$id';
+        </script>";
+        exit;
     }
+
+    if ($icon) {
+        // hapus icon lama
+        $old = mysqli_fetch_assoc(mysqli_query($conn, "
+            SELECT icon FROM kategori 
+            WHERE id_kategori='$id'
+        "));
+
+        if ($old['icon'] && file_exists("../img/kategori/" . $old['icon'])) {
+            unlink("../img/kategori/" . $old['icon']);
+        }
+
+        mysqli_query($conn, "
+            UPDATE kategori 
+            SET nama_kategori='$nama', icon='$icon'
+            WHERE id_kategori='$id'
+        ");
+    } else {
+        mysqli_query($conn, "
+            UPDATE kategori 
+            SET nama_kategori='$nama'
+            WHERE id_kategori='$id'
+        ");
+    }
+}
 
     header("Location: kategori.php");
     exit;

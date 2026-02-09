@@ -232,16 +232,7 @@ mysqli_query($conn, "UPDATE users SET last_activity=NOW() WHERE id_user='$id_use
             <span>Kategori</span>
         </a>
 
-        <!-- <div class="mt-8 pt-6 border-t border-gray-100">
-            <a href="settings.php" class="flex items-center px-4 py-3 rounded-xl sidebar-link text-gray-700 hover:bg-red-50 hover-lift">
-                <i class="fas fa-cog w-5 mr-3 text-gray-500"></i>
-                <span>System Settings</span>
-            </a>
-            <a href="analytics.php" class="flex items-center px-4 py-3 rounded-xl sidebar-link text-gray-700 hover:bg-blue-50 hover-lift">
-                <i class="fas fa-chart-bar w-5 mr-3 text-blue-500"></i>
-                <span>Analytics</span>
-            </a>
-        </div> -->
+        
     </nav>
 
     <!-- FOOTER -->
@@ -477,7 +468,7 @@ mysqli_query($conn, "UPDATE users SET last_activity=NOW() WHERE id_user='$id_use
                     </div>
                     
                     <div class="mt-4 md:mt-6 flex flex-col gap-2 md:gap-3">
-                        <a href="../auth/edit_akun.php" class="gradient-accent text-white px-4 md:px-6 py-2 md:py-3 rounded-xl font-medium shadow-md hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2 text-sm md:text-base">
+                        <a href="edit-sa.php" class="gradient-accent text-white px-4 md:px-6 py-2 md:py-3 rounded-xl font-medium shadow-md hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2 text-sm md:text-base">
                             <i class="fas fa-edit"></i>
                             Edit Profile
                         </a>

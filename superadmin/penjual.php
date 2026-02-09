@@ -174,10 +174,11 @@ function getStatus($last_activity) {
                 <p class="text-gray-600">Kelola dan pantau semua akun penjual di platform</p>
             </div>
             <div class="mt-4 md:mt-0 flex items-center gap-3">
-                <button class="px-4 py-2 bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
-                    <i class="fas fa-plus"></i>
-                    Tambah Penjual
-                </button>
+                <a href="register.php"
+   class="px-4 py-2 bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
+    <i class="fas fa-plus"></i>
+    Tambah Penjual
+</a>
                 <button class="px-4 py-2 bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
                     <i class="fas fa-download"></i>
                     Export Data
@@ -311,19 +312,24 @@ function getStatus($last_activity) {
                 <?php endif; ?>
                 
                 <!-- Action Buttons -->
-                <div class="flex gap-2">
-                    <a href="detail_penjual.php?id=<?= $row['id_user'] ?>" 
-                       class="flex-1 gradient-accent text-white px-4 py-2.5 rounded-xl font-medium text-center hover:shadow-lg transition-shadow flex items-center justify-center gap-2">
-                       <i class="fas fa-eye"></i>
-                       <span>Detail</span>
-                    </a>
-                    <a href="?hapus=<?= $row['id_user'] ?>" 
-                       onclick="return confirm('Yakin hapus penjual <?= htmlspecialchars($row['nama']) ?>?')"
-                       class="flex-1 bg-white border border-red-300 text-red-600 px-4 py-2.5 rounded-xl font-medium text-center hover:bg-red-50 transition-colors flex items-center justify-center gap-2">
-                       <i class="fas fa-trash"></i>
-                       <span>Hapus</span>
-                    </a>
-                </div>
+                <!-- Action Buttons -->
+<div class="flex gap-2">
+    <!-- Edit -->
+    <a href="edit_akun.php?id=<?= $row['id_user'] ?>" 
+       class="flex-1 gradient-accent text-white px-4 py-2.5 rounded-xl font-medium text-center hover:shadow-lg transition-shadow flex items-center justify-center gap-2">
+       <i class="fas fa-eye"></i>
+       <span>Edit</span>
+    </a>
+
+    <!-- Hapus -->
+    <a href="?hapus=<?= $row['id_user'] ?>" 
+       onclick="return confirm('Yakin hapus penjual <?= htmlspecialchars($row['nama']) ?>?')"
+       class="flex-1 bg-white border border-red-300 text-red-600 px-4 py-2.5 rounded-xl font-medium text-center hover:bg-red-50 transition-colors flex items-center justify-center gap-2">
+       <i class="fas fa-trash"></i>
+       <span>Hapus</span>
+    </a>
+</div>
+
             </div>
             <?php endwhile; ?>
             

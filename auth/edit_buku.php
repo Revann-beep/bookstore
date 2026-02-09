@@ -41,6 +41,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $modal       = $_POST['modal'];
     $deskripsi   = mysqli_real_escape_string($conn, $_POST['deskripsi']);
 
+    // ===== CEK DUPLIKAT NAMA PRODUK UNTUK PENJUAL INI =====
+    $cek = mysqli_query($conn, "
+        SELECT * FROM produk 
+        WHERE id_penjual='$id_penjual' AND nama_buku='$nama' AND id_produk!='$id_produk'
+    ");
+    if (mysqli_num_rows($cek) > 0) {
+        $_SESSION['alert'] = [
+            'type' => 'error',
+            'title' => 'Gagal',
+            'text' => 'Anda sudah memiliki produk dengan nama yang sama!'
+        ];
+        header("Location: ../penjual/produk.php");
+        exit;
+    }
+
     $gambar_lama = $data['gambar'];
     $gambar_baru = $gambar_lama;
 
@@ -63,34 +78,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    // UPDATE DATABASE
     $update = mysqli_query($conn, "
-    UPDATE produk SET
-        nama_buku='$nama',
-        id_kategori='$id_kategori',
-        stok='$stok',
-        harga='$harga',
-        modal='$modal',
-        deskripsi='$deskripsi',
-        gambar='$gambar_baru'
-    WHERE id_produk='$id_produk' AND id_penjual='$id_penjual'
-");
+        UPDATE produk SET
+            nama_buku='$nama',
+            id_kategori='$id_kategori',
+            stok='$stok',
+            harga='$harga',
+            modal='$modal',
+            deskripsi='$deskripsi',
+            gambar='$gambar_baru'
+        WHERE id_produk='$id_produk' AND id_penjual='$id_penjual'
+    ");
 
-if ($update) {
-    $_SESSION['alert'] = [
-        'type' => 'success',
-        'title' => 'Berhasil',
-        'text' => 'Produk berhasil diperbarui'
-    ];
-} else {
-    $_SESSION['alert'] = [
-        'type' => 'error',
-        'title' => 'Gagal',
-        'text' => 'Produk gagal diperbarui'
-    ];
-}
+    if ($update) {
+        $_SESSION['alert'] = [
+            'type' => 'success',
+            'title' => 'Berhasil',
+            'text' => 'Produk berhasil diperbarui'
+        ];
+    } else {
+        $_SESSION['alert'] = [
+            'type' => 'error',
+            'title' => 'Gagal',
+            'text' => 'Produk gagal diperbarui'
+        ];
+    }
 
-header("Location: ../penjual/produk.php");
-exit;
+    header("Location: ../penjual/produk.php");
+    exit;
 
 }
 ?>

@@ -23,6 +23,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $modal       = (int)$_POST['modal'];
     $deskripsi   = mysqli_real_escape_string($conn, $_POST['deskripsi']);
 
+    // ================== CEK DUPLIKAT NAMA ==================
+    $cek = mysqli_query($conn, "
+        SELECT * FROM produk 
+        WHERE id_penjual='$id_penjual' AND nama_buku='$nama'
+    ");
+    if (mysqli_num_rows($cek) > 0) {
+        $_SESSION['error'] = "Anda sudah memiliki produk dengan nama yang sama!";
+        header("Location: ../penjual/produk.php");
+        exit;
+    }
+
     // ================== UPLOAD GAMBAR ==================
     $gambar = null;
 
@@ -32,40 +43,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ext = strtolower(pathinfo($_FILES['gambar']['name'], PATHINFO_EXTENSION));
 
         if (!in_array($ext, $allowed)) {
-            die("Format gambar tidak diizinkan");
+            $_SESSION['error'] = "Format gambar tidak diizinkan";
+            header("Location: ../penjual/produk.php");
+            exit;
         }
 
         // pastikan folder ada
         $folder = "../img/produk/";
-        if (!is_dir($folder)) {
-            mkdir($folder, 0777, true);
-        }
+        if (!is_dir($folder)) mkdir($folder, 0777, true);
 
         $gambar = uniqid('buku_') . '.' . $ext;
         $target = $folder . $gambar;
 
         if (!move_uploaded_file($_FILES['gambar']['tmp_name'], $target)) {
-            die("Upload gambar gagal");
+            $_SESSION['error'] = "Upload gambar gagal";
+            header("Location: ../penjual/produk.php");
+            exit;
         }
     }
 
     // ================== INSERT DB ==================
-$query = mysqli_query($conn, "
-    INSERT INTO produk 
-    (id_penjual, id_kategori, nama_buku, stok, harga, modal, deskripsi, gambar)
-    VALUES
-    ('$id_penjual', '$id_kategori', '$nama', '$stok', '$harga', '$modal', '$deskripsi', '$gambar')
-");
+    $query = mysqli_query($conn, "
+        INSERT INTO produk 
+        (id_penjual, id_kategori, nama_buku, stok, harga, modal, deskripsi, gambar)
+        VALUES
+        ('$id_penjual', '$id_kategori', '$nama', '$stok', '$harga', '$modal', '$deskripsi', '$gambar')
+    ");
 
-if ($query) {
-    $_SESSION['success'] = "Produk berhasil ditambahkan!";
-} else {
-    $_SESSION['error'] = "Produk gagal ditambahkan!";
-}
+    if ($query) {
+        $_SESSION['success'] = "Produk berhasil ditambahkan!";
+    } else {
+        $_SESSION['error'] = "Produk gagal ditambahkan!";
+    }
 
-header("Location: ../penjual/produk.php");
-exit;
-
+    header("Location: ../penjual/produk.php");
+    exit;
 }
 ?>
 
