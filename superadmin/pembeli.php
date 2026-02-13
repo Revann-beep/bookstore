@@ -2,35 +2,70 @@
 session_start();
 require '../auth/connection.php';
 
+// =====================
 // CEGAH AKSES SELAIN SUPER ADMIN
+// =====================
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'super_admin') {
     header("Location: ../index.php");
     exit;
 }
 
-
-// HAPUS PEMBELI
+// =====================
+// HAPUS PEMBELI (HANYA JIKA OFFLINE)
+// =====================
 if (isset($_GET['hapus'])) {
-    $id = $_GET['hapus'];
-    mysqli_query($conn, "DELETE FROM users WHERE id_user='$id' AND role='pembeli'");
+    $id = mysqli_real_escape_string($conn, $_GET['hapus']);
+
+    // Ambil last_activity pembeli
+    $cek = mysqli_query($conn, "
+        SELECT last_activity 
+        FROM users 
+        WHERE id_user='$id' AND role='pembeli'
+    ");
+
+    if (mysqli_num_rows($cek) === 1) {
+        $data = mysqli_fetch_assoc($cek);
+
+        $status = 'offline';
+        if (!empty($data['last_activity'])) {
+            $last = strtotime($data['last_activity']);
+            if ((time() - $last) <= 300) { // 5 menit
+                $status = 'online';
+            }
+        }
+
+        if ($status === 'offline') {
+            // BOLEH DIHAPUS
+            mysqli_query($conn, "
+                DELETE FROM users 
+                WHERE id_user='$id' AND role='pembeli'
+            ");
+            $_SESSION['success'] = "Pembeli berhasil dihapus.";
+        } else {
+            // TIDAK BOLEH DIHAPUS
+            $_SESSION['error'] = "Pembeli sedang online, tidak bisa dihapus.";
+        }
+    }
+
     header("Location: pembeli.php");
     exit;
 }
 
+// =====================
 // AMBIL DATA PEMBELI
+// =====================
 $pembeli = mysqli_query($conn, "
     SELECT * FROM users 
     WHERE role='pembeli'
     ORDER BY id_user DESC
 ");
 
-// Fungsi untuk cek status online/offline
+// =====================
+// FUNGSI STATUS ONLINE / OFFLINE
+// =====================
 function getStatus($last_activity) {
     if (!$last_activity) return 'offline';
-    $last = strtotime($last_activity);
-    $now  = time();
-    $diff = $now - $last;
-    return ($diff <= 300) ? 'online' : 'offline'; // 5 menit = online
+    return ((time() - strtotime($last_activity)) <= 300) ? 'online' : 'offline';
 }
 ?>
 

@@ -45,6 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nama  = htmlspecialchars($_POST['nama']);
     $email = htmlspecialchars($_POST['email']);
     $imageBaru = $user['image']; // default pakai yang lama
+    $alamat   = mysqli_real_escape_string($conn, $_POST['alamat']);
+    $password = $_POST['password']; // jangan di-escape
 
     // ===== UPLOAD IMAGE =====
     if (!empty($_FILES['image']['name'])) {
@@ -82,24 +84,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // ===== UPDATE DATA =====
-    if (!$error) {
-        // CEK EMAIL UNIK
-        $cek_email = mysqli_query($conn, "SELECT * FROM users WHERE email='$email' AND id_user!='$id_user'");
-        if (mysqli_num_rows($cek_email) > 0) {
-            $error = "Email sudah terdaftar!";
-        } else {
+    // ===== UPDATE DATA =====
+if (!$error) {
+
+    // CEK EMAIL UNIK
+    $cek_email = mysqli_query($conn, "
+        SELECT * FROM users 
+        WHERE email='$email' AND id_user!='$id_user'
+    ");
+
+    if (mysqli_num_rows($cek_email) > 0) {
+        $error = "Email sudah terdaftar!";
+    } else {
+
+        /* ===== LOGIC PASSWORD OPSIONAL ===== */
+        $updatePassword = "";
+
+        if (!empty($password)) {
+            if (strlen($password) < 6) {
+                $error = "Password minimal 6 karakter.";
+            } else {
+                $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+                $updatePassword = ", password='$passwordHash'";
+            }
+        }
+
+        /* ===== JIKA TIDAK ADA ERROR, UPDATE DATA ===== */
+        if (!$error) {
             mysqli_query($conn, "
                 UPDATE users SET 
                     nama='$nama',
                     email='$email',
+                    alamat='$alamat',
                     image='$imageBaru'
+                    $updatePassword
                 WHERE id_user='$id_user'
             ");
+
             $success = "Data pembeli berhasil diperbarui";
+
             // refresh data
-            $user = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM users WHERE id_user='$id_user'"));
+            $user = mysqli_fetch_assoc(
+                mysqli_query($conn, "SELECT * FROM users WHERE id_user='$id_user'")
+            );
         }
     }
+}
 }
 ?>
 
@@ -151,6 +181,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <label class="text-sm font-medium">Email</label>
             <input type="email" name="email" value="<?= htmlspecialchars($user['email']) ?>"
                    class="w-full px-4 py-2 border rounded-lg focus:ring focus:ring-teal-300" required>
+        </div>
+        <!-- ALAMAT -->
+        <div>
+            <label class="text-sm font-medium">Alamat</label>
+            <textarea name="alamat" rows="3"
+                class="w-full px-4 py-2 border rounded-lg focus:ring focus:ring-teal-300"
+                placeholder="Masukkan alamat lengkap"><?= htmlspecialchars($user['alamat'] ?? '') ?></textarea>
+        </div>
+        <!-- PASSWORD -->
+        <div>
+            <label class="text-sm font-medium">Password Baru</label>
+            <input type="password" name="password"
+                class="w-full px-4 py-2 border rounded-lg focus:ring focus:ring-teal-300"
+                placeholder="Kosongkan jika tidak ingin mengubah">
+            <p class="text-xs text-gray-500 mt-1">Minimal 6 karakter</p>
         </div>
 
         <!-- BUTTON -->

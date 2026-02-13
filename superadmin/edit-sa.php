@@ -45,12 +45,31 @@ if (!empty($user['last_photo_update'])) {
 ===================== */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    $nama  = mysqli_real_escape_string($conn, $_POST['nama']);
-    $email = mysqli_real_escape_string($conn, $_POST['email']);
-    $imageBaru = $user['image'];
+    $nama       = mysqli_real_escape_string($conn, $_POST['nama']);
+    $email      = mysqli_real_escape_string($conn, $_POST['email']);
+    $emailLama  = $user['email'];
+    $imageBaru  = $user['image'];
 
-    /* ==== UPLOAD FOTO ==== */
-    if (!empty($_FILES['image']['name'])) {
+    /* =====================
+       CEK EMAIL DUPLIKAT
+    ===================== */
+    if ($email !== $emailLama) {
+        $cekEmail = mysqli_query($conn, "
+            SELECT id_user 
+            FROM users 
+            WHERE email='$email'
+            AND id_user != '$id_user'
+        ");
+
+        if (mysqli_num_rows($cekEmail) > 0) {
+            $error = "Email sudah digunakan oleh akun lain.";
+        }
+    }
+
+    /* =====================
+       UPLOAD FOTO
+    ===================== */
+    if (!$error && !empty($_FILES['image']['name'])) {
 
         if (!$bolehGantiImage) {
             $error = "Foto profil hanya bisa diganti 7 hari sekali.";
@@ -73,7 +92,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 if (move_uploaded_file($_FILES['image']['tmp_name'], $target)) {
 
-                    // hapus foto lama
                     if (!empty($user['image']) && file_exists($user['image'])) {
                         unlink($user['image']);
                     }
@@ -92,7 +110,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    /* ==== UPDATE DB ==== */
+    /* =====================
+       UPDATE DATABASE
+    ===================== */
     if (!$error) {
         mysqli_query($conn, "
             UPDATE users SET

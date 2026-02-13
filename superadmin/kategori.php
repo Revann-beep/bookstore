@@ -2,6 +2,13 @@
 session_start();
 require '../auth/connection.php';
 
+if (!isset($_SESSION['id_user'])) {
+    header("Location: ../login.php");
+    exit;
+}
+
+$id_user = $_SESSION['id_user'];
+
 mysqli_query($conn, "
     UPDATE users 
     SET last_activity = NOW(),

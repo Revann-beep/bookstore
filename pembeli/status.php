@@ -173,7 +173,7 @@ $total_orders = mysqli_num_rows($q);
 <main class="p-8">
 
   <!-- STATISTIK -->
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
     <?php 
     mysqli_data_seek($q, 0);
     $total_orders = mysqli_num_rows($q);
@@ -216,19 +216,7 @@ $total_orders = mysqli_num_rows($q);
       </div>
     </div>
 
-    <div class="bg-gradient-to-r from-green-50 to-green-100 rounded-2xl p-6 border border-green-200">
-      <div class="flex justify-between items-center">
-        <div>
-          <p class="text-sm text-green-800 font-medium">Dibayar</p>
-          <p class="text-3xl font-bold text-green-900"><?= $paid ?></p>
-        </div>
-        <div class="p-3 rounded-full bg-green-500/20">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-          </svg>
-        </div>
-      </div>
-    </div>
+    
 
     <div class="bg-gradient-to-r from-purple-50 to-purple-100 rounded-2xl p-6 border border-purple-200">
       <div class="flex justify-between items-center">
@@ -333,58 +321,71 @@ $total_orders = mysqli_num_rows($q);
             </td>
             
             <td class="py-4 px-6">
-              <?php 
-              $statusColors = [
-                'pending' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
-                'menunggu_verifikasi' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
-                'paid' => 'bg-green-100 text-green-800 border-green-200',
-                'dikirim' => 'bg-blue-100 text-blue-800 border-blue-200',
-                'refund' => 'bg-purple-100 text-purple-800 border-purple-200'
-              ];
-              ?>
-              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium border <?= $statusColors[$d['status_order']] ?>">
-                <?php if ($d['status_order'] == 'pending'): ?>
-                  <div class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
-                <?php elseif ($d['status_order'] == 'menunggu_verifikasi'): ?>
-                  <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
-                <?php elseif ($d['status_order'] == 'paid'): ?>
-                  <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                <?php elseif ($d['status_order'] == 'dikirim'): ?>
-                  <div class="w-2 h-2 rounded-full bg-blue-500"></div>
-                <?php elseif ($d['status_order'] == 'refund'): ?>
-                  <div class="w-2 h-2 rounded-full bg-blue-500"></div>
-                <?php else: ?>
-                  <div class="w-2 h-2 rounded-full bg-purple-500"></div>
-                <?php endif; ?>
-                <?= ucfirst($d['status_order']) ?>
-              </div>
-              <div class="text-xs text-slate-500 mt-1">
-                <?= $d['status_order'] == 'paid' ? 'Disetujui' : 'Menunggu' ?>
-              </div>
-            </td>
+<?php 
+$statusColors = [
+  'pending' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
+  'menunggu_verifikasi' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
+  'paid' => 'bg-green-100 text-green-800 border-green-200',
+  'dikirim' => 'bg-blue-100 text-blue-800 border-blue-200',
+  'refund' => 'bg-purple-100 text-purple-800 border-purple-200'
+];
+
+$status = $d['status_order'] ?? 'pending';
+$color  = $statusColors[$status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
+?>
+
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium border <?= $color ?>">
+  <?php if ($status === 'pending'): ?>
+    <div class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
+  <?php elseif ($status === 'menunggu_verifikasi'): ?>
+    <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+  <?php elseif ($status === 'paid'): ?>
+    <div class="w-2 h-2 rounded-full bg-green-500"></div>
+  <?php elseif ($status === 'dikirim'): ?>
+    <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+  <?php elseif ($status === 'refund'): ?>
+    <div class="w-2 h-2 rounded-full bg-purple-500"></div>
+  <?php else: ?>
+    <div class="w-2 h-2 rounded-full bg-gray-500"></div>
+  <?php endif; ?>
+
+  <?= ucfirst(str_replace('_',' ', $status)) ?>
+</div>
+
+<div class="text-xs text-slate-500 mt-1">
+  <?= $status === 'paid' ? 'Disetujui' : 'Menunggu' ?>
+</div>
+</td>
             
             <!-- ACTION -->
-            <td class="py-4 px-6">
+                        <td class="py-4 px-6">
               <div class="flex gap-2">
-                <!-- Lihat Invoice -->
-                <a href="invoice.php?id_order=<?= $d['id_order'] ?>"
-                   class="flex items-center gap-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-sm font-medium transition-all duration-300 shadow hover:shadow-lg">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clip-rule="evenodd" />
-                  </svg>
+
+                <!-- LACAK (hanya jika dikirim & ada resi) -->
+                <?php if (($d['status_order'] ?? '') === 'dikirim' && !empty($d['no_resi'])): ?>
+                  <a href="../auth/track.php?id_order=<?= (int)$d['id_order'] ?>"
+                    class="flex items-center gap-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition shadow">
+                    <i class="fas fa-map-marker-alt text-sm"></i>
+                    Lacak
+                  </a>
+                <?php endif; ?>
+
+                <!-- INVOICE -->
+                <a href="invoice.php?id_order=<?= (int)$d['id_order'] ?>"
+                  class="flex items-center gap-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition shadow">
+                  <i class="fas fa-file-invoice text-sm"></i>
                   Invoice
                 </a>
 
-                <!-- Upload Bukti -->
-                <?php if ($d['status_order']=='pending' && !$d['bukti_tf']): ?>
-                  <a href="../auth/upload-bukti.php?id_order=<?= $d['id_order'] ?>"
-                     class="flex items-center gap-1 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-lg text-sm font-medium transition-all duration-300 shadow hover:shadow-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                    </svg>
+                <!-- UPLOAD BUKTI -->
+                <?php if (($d['status_order'] ?? '') === 'pending' && empty($d['bukti_tf'])): ?>
+                  <a href="../auth/upload-bukti.php?id_order=<?= (int)$d['id_order'] ?>"
+                    class="flex items-center gap-1 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-medium transition shadow">
+                    <i class="fas fa-upload text-sm"></i>
                     Upload
                   </a>
                 <?php endif; ?>
+
               </div>
             </td>
           </tr>

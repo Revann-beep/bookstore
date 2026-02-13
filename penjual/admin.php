@@ -320,7 +320,7 @@ function getStatus($last_activity, $status) {
                 
                 <!-- Action Buttons -->
                 <div class="flex gap-2">
-                    <a href="detail_penjual_view.php?id=<?= $row['id_user'] ?>" 
+                    <a href="detail.php?id=<?= $row['id_user'] ?>" 
                        class="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2.5 rounded-xl font-medium text-center hover:shadow-lg transition-shadow flex items-center justify-center gap-2">
                        <i class="fas fa-eye"></i>
                        <span>Lihat Profil</span>

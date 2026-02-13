@@ -5,11 +5,6 @@ require '../auth/connection.php';
 /* =====================
    CEK ROLE
 ===================== */
-// echo "SESSION ID: " . $_SESSION['id_user'] . "<br>";
-// echo "GET ID: " . ($_GET['id'] ?? 'null') . "<br>";
-// echo "POST ID: " . ($_POST['target_id'] ?? 'null');
-// exit;
-
 if (
     !isset($_SESSION['role']) ||
     !in_array($_SESSION['role'], ['penjual', 'super_admin'])
@@ -22,10 +17,8 @@ if (
    TENTUKAN ID USER
 ===================== */
 if ($_SESSION['role'] === 'super_admin') {
-    // superadmin edit penjual lain
     $id_user = $_GET['id'] ?? null;
 } else {
-    // penjual edit dirinya sendiri
     $id_user = $_SESSION['id_user'];
 }
 
@@ -37,11 +30,11 @@ if (!$id_user) {
 /* =====================
    AMBIL DATA USER
 ===================== */
-if ($_SESSION['role'] === 'superadmin') {
-    // superadmin hanya boleh edit akun penjual
+if ($_SESSION['role'] === 'super_admin') {
     $data = mysqli_query($conn, "
         SELECT * FROM users 
-        WHERE id_user='$id_user' AND role='penjual'
+        WHERE id_user='$id_user' 
+        AND role='penjual'
     ");
 } else {
     $data = mysqli_query($conn, "
@@ -63,12 +56,11 @@ $success = '';
 /* =====================
    CEK BATAS 7 HARI GANTI FOTO
 ===================== */
-$bolehGantiimage = true;
+$bolehGantiImage = true;
 if (!empty($user['last_photo_update'])) {
     $last = strtotime($user['last_photo_update']);
-    $now  = time();
-    if (($now - $last) < (7 * 24 * 60 * 60)) {
-        $bolehGantiimage = false;
+    if ((time() - $last) < (7 * 24 * 60 * 60)) {
+        $bolehGantiImage = false;
     }
 }
 
@@ -77,15 +69,50 @@ if (!empty($user['last_photo_update'])) {
 ===================== */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    $nama  = htmlspecialchars($_POST['nama']);
-    $email = htmlspecialchars($_POST['email']);
-    $imageBaru = $user['image']; // default pakai yang lama
+    // ===== AMBIL INPUT =====
+    $nama       = mysqli_real_escape_string($conn, $_POST['nama']);
+    $emailBaru  = mysqli_real_escape_string($conn, $_POST['email']);
+    $emailLama  = $user['email'];
+    $alamat     = mysqli_real_escape_string($conn, $_POST['alamat']);
+    $password   = $_POST['password']; // JANGAN di-escape
+    $imageBaru  = $user['image'];
 
-    /* ===== UPLOAD IMAGE ===== */
-    if (!empty($_FILES['image']['name'])) {
+    /* =====================
+       CEK EMAIL DUPLIKAT
+    ===================== */
+    if ($emailBaru !== $emailLama) {
+        $cekEmail = mysqli_query($conn, "
+            SELECT id_user FROM users 
+            WHERE email='$emailBaru'
+            AND id_user != '$id_user'
+        ");
 
-        if (!$bolehGantiimage) {
-            $error = "Image profil hanya bisa diganti 7 hari sekali.";
+        if (mysqli_num_rows($cekEmail) > 0) {
+            $error = "Email sudah digunakan oleh akun lain.";
+        }
+    }
+
+    /* =====================
+       LOGIC PASSWORD (INI POSISI YANG BENAR)
+    ===================== */
+    $updatePassword = "";
+
+    if (!empty($password)) {
+        if (strlen($password) < 6) {
+            $error = "Password minimal 6 karakter.";
+        } else {
+            $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+            $updatePassword = ", password='$passwordHash'";
+        }
+    }
+
+    /* =====================
+       UPLOAD IMAGE
+    ===================== */
+    if (!$error && !empty($_FILES['image']['name'])) {
+
+        if (!$bolehGantiImage) {
+            $error = "Foto profil hanya bisa diganti setiap 7 hari.";
         } else {
 
             $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
@@ -104,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $target = $folder . $namaFile;
 
                 if (!move_uploaded_file($_FILES['image']['tmp_name'], $target)) {
-                    $error = "Upload gambar gagal. Cek permission folder.";
+                    $error = "Upload gambar gagal.";
                 } else {
 
                     if (!empty($user['image']) && file_exists($user['image'])) {
@@ -115,7 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     mysqli_query($conn, "
                         UPDATE users 
-                        SET last_photo_update=NOW() 
+                        SET last_photo_update = NOW()
                         WHERE id_user='$id_user'
                     ");
                 }
@@ -123,17 +150,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    /* ===== UPDATE DATA ===== */
+    /* =====================
+       UPDATE DATA (FINAL)
+    ===================== */
     if (!$error) {
         mysqli_query($conn, "
             UPDATE users SET 
                 nama='$nama',
-                email='$email',
+                email='$emailBaru',
+                alamat='$alamat',
                 image='$imageBaru'
+                $updatePassword
             WHERE id_user='$id_user'
         ");
 
-        $success = "Data berhasil diperbarui";
+        $success = "Data berhasil diperbarui.";
     }
 }
 ?>
@@ -225,7 +256,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <div class="pt-2">
-                <?php if ($bolehGantiimage): ?>
+                <?php if ($bolehGantiImage): ?>
                     <label class="cursor-pointer inline-flex items-center px-4 py-2 bg-primary-50 hover:bg-primary-100 text-primary-700 rounded-lg transition duration-200">
                         <i class="fas fa-camera mr-2"></i>
                         <span>Unggah Foto Baru</span>
@@ -281,6 +312,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                            placeholder="contoh@email.com" required>
                 </div>
             </div>
+            <!-- ALAMAT Field -->
+<div class="space-y-2">
+    <label class="text-sm font-semibold text-gray-700 flex items-center">
+        <i class="fas fa-map-marker-alt text-primary-500 mr-2 text-sm"></i>
+        Alamat
+    </label>
+    <textarea name="alamat" rows="3"
+        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition duration-200"
+        placeholder="Masukkan alamat lengkap"><?= htmlspecialchars($user['alamat'] ?? '') ?></textarea>
+</div>
+<!-- PASSWORD Field -->
+<div class="space-y-2">
+    <label class="text-sm font-semibold text-gray-700 flex items-center">
+        <i class="fas fa-lock text-primary-500 mr-2 text-sm"></i>
+        Password Baru
+    </label>
+    <div class="relative">
+        <input type="password" name="password"
+               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition duration-200"
+               placeholder="Kosongkan jika tidak ingin mengubah">
+    </div>
+    <p class="text-xs text-gray-500">
+        Minimal 6 karakter
+    </p>
+</div>
         </div>
 
         <!-- Action Buttons -->

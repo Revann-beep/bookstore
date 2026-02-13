@@ -2,15 +2,13 @@
 session_start();
 require '../auth/connection.php';
 
-// CEK LOGIN
+// ================= CEK LOGIN =================
 if (!isset($_SESSION['id_user'])) {
     header("Location: ../index.php");
     exit;
 }
 
-
-
-// HANYA PEMBELI YANG BOLEH CHAT
+// ================= HANYA PEMBELI =================
 if ($_SESSION['role'] !== 'pembeli') {
     die("Akses ditolak");
 }
@@ -18,60 +16,94 @@ if ($_SESSION['role'] !== 'pembeli') {
 $pembeli_id   = $_SESSION['id_user'];
 $pembeli_nama = $_SESSION['nama'];
 
-// CEK ID PRODUK
-if (!isset($_GET['id_produk'])) {
-    die("Produk tidak dipilih");
+// ================= OPSIONAL ID PRODUK =================
+$id_produk = isset($_GET['id_produk']) ? intval($_GET['id_produk']) : null;
+
+// ================= TENTUKAN PENJUAL =================
+if ($id_produk) {
+    // ===== CHAT LEWAT PRODUK =====
+    $qProduk = mysqli_query($conn, "
+        SELECT p.id_produk, p.nama_buku, 
+               u.id_user AS id_penjual, u.nama AS nama_penjual
+        FROM produk p
+        JOIN users u ON p.id_penjual = u.id_user
+        WHERE p.id_produk = '$id_produk'
+    ");
+
+    $produk = mysqli_fetch_assoc($qProduk);
+    if (!$produk) die("Produk tidak ditemukan");
+
+    $penjual_id   = $produk['id_penjual'];
+    $penjual_nama = $produk['nama_penjual'];
+    $nama_buku    = $produk['nama_buku'];
+
+} else {
+    // ===== CHAT LANGSUNG KE PENJUAL =====
+    if (!isset($_GET['id_penjual'])) {
+        die("Penjual tidak dipilih");
+    }
+
+    $penjual_id = intval($_GET['id_penjual']);
+
+    $qPenjual = mysqli_query($conn, "
+        SELECT id_user, nama 
+        FROM users 
+        WHERE id_user='$penjual_id' AND role='penjual'
+    ");
+
+    $penjual = mysqli_fetch_assoc($qPenjual);
+    if (!$penjual) die("Penjual tidak ditemukan");
+
+    $penjual_nama = $penjual['nama'];
+    $nama_buku    = null;
 }
 
-$id_produk = intval($_GET['id_produk']);
+// ================= MARK AS READ =================
+$whereProdukRead = $id_produk 
+    ? "AND id_produk='$id_produk'" 
+    : "AND id_produk IS NULL";
 
-// AMBIL PRODUK + PENJUAL
-$qProduk = mysqli_query($conn, "
-    SELECT p.id_produk, p.nama_buku, u.id_user AS id_penjual, u.nama AS nama_penjual
-    FROM produk p
-    JOIN users u ON p.id_penjual = u.id_user
-    WHERE p.id_produk = '$id_produk'
-");
-
-$produk = mysqli_fetch_assoc($qProduk);
-
-if (!$produk) {
-    die("Produk tidak ditemukan");
-}
-
-$penjual_id   = $produk['id_penjual'];
-$penjual_nama = $produk['nama_penjual'];
-$nama_buku  = $produk['nama_buku'];
-
-// MARK AS READ (KHUSUS PRODUK INI)
 mysqli_query($conn, "
     UPDATE messages 
     SET is_read = 1 
-    WHERE sender_id = '$penjual_id'
-      AND receiver_id = '$pembeli_id'
-      AND id_produk = '$id_produk'
-      AND is_read = 0
+    WHERE sender_id='$penjual_id'
+      AND receiver_id='$pembeli_id'
+      $whereProdukRead
 ");
 
-// KIRIM PESAN
+// ================= KIRIM PESAN =================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pesan'])) {
     $pesan = mysqli_real_escape_string($conn, $_POST['pesan']);
 
     mysqli_query($conn, "
         INSERT INTO messages (sender_id, receiver_id, id_produk, message, is_read)
-        VALUES ('$pembeli_id', '$penjual_id', '$id_produk', '$pesan', 0)
+        VALUES (
+            '$pembeli_id',
+            '$penjual_id',
+            " . ($id_produk ? "'$id_produk'" : "NULL") . ",
+            '$pesan',
+            0
+        )
     ");
 
-    header("Location: pesan.php?id_produk=$id_produk");
+    if ($id_produk) {
+        header("Location: pesan.php?id_produk=$id_produk");
+    } else {
+        header("Location: pesan.php?id_penjual=$penjual_id");
+    }
     exit;
 }
 
-// AMBIL CHAT HISTORY (KHUSUS PRODUK INI)
+// ================= AMBIL CHAT HISTORY =================
+$whereProdukChat = $id_produk 
+    ? "m.id_produk='$id_produk'" 
+    : "m.id_produk IS NULL";
+
 $chatQuery = mysqli_query($conn, "
     SELECT m.*, u.nama AS sender_nama, u.role AS sender_role
     FROM messages m
     JOIN users u ON u.id_user = m.sender_id
-    WHERE m.id_produk = '$id_produk'
+    WHERE $whereProdukChat
     AND (
         (m.sender_id='$pembeli_id' AND m.receiver_id='$penjual_id')
         OR
@@ -85,14 +117,14 @@ while ($row = mysqli_fetch_assoc($chatQuery)) {
     $chatHistory[] = $row;
 }
 
-// AMBIL PESAN BELUM DIBACA (PER PRODUK)
+// ================= UNREAD COUNT =================
 $unreadQuery = mysqli_query($conn, "
-    SELECT COUNT(*) AS unread_count 
-    FROM messages 
-    WHERE receiver_id = '$pembeli_id'
-      AND sender_id = '$penjual_id'
-      AND id_produk = '$id_produk'
-      AND is_read = 0
+    SELECT COUNT(*) AS unread_count
+    FROM messages
+    WHERE receiver_id='$pembeli_id'
+      AND sender_id='$penjual_id'
+      $whereProdukRead
+      AND is_read=0
 ");
 
 $unreadData  = mysqli_fetch_assoc($unreadQuery);

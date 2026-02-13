@@ -2,35 +2,81 @@
 session_start();
 require '../auth/connection.php';
 
+
+
+// =====================
 // CEGAH AKSES SELAIN SUPER ADMIN
+// =====================
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'super_admin') {
     header("Location: ../login.php");
     exit;
 }
 
+// Update last_activity Super Admin
+mysqli_query($conn, "
+    UPDATE users 
+    SET last_activity = NOW() 
+    WHERE id_user = '{$_SESSION['id_user']}'
+");
 
-
-// Update last_activity Super Admin sendiri (opsional)
-mysqli_query($conn, "UPDATE users SET last_activity=NOW() WHERE id_user='{$_SESSION['id_user']}'");
-
-// HAPUS PENJUAL
+// =====================
+// HAPUS PENJUAL (HANYA JIKA OFFLINE)
+// =====================
 if (isset($_GET['hapus'])) {
-    $id = $_GET['hapus'];
-    mysqli_query($conn, "DELETE FROM users WHERE id_user='$id' AND role='penjual'");
+    $id = mysqli_real_escape_string($conn, $_GET['hapus']);
+
+    // Ambil last_activity penjual
+    $cek = mysqli_query($conn, "
+        SELECT last_activity 
+        FROM users 
+        WHERE id_user='$id' AND role='penjual'
+    ");
+
+    if (mysqli_num_rows($cek) === 1) {
+        $data = mysqli_fetch_assoc($cek);
+
+        $status = 'offline';
+        if (!empty($data['last_activity'])) {
+            $last = strtotime($data['last_activity']);
+            if ((time() - $last) <= 300) { // 5 menit
+                $status = 'online';
+            }
+        }
+
+        if ($status === 'offline') {
+            // BOLEH DIHAPUS
+            mysqli_query($conn, "
+                DELETE FROM users 
+                WHERE id_user='$id' AND role='penjual'
+            ");
+            $_SESSION['success'] = "Penjual berhasil dihapus.";
+        } else {
+            // TIDAK BOLEH DIHAPUS
+            $_SESSION['error'] = "Penjual sedang online, tidak bisa dihapus.";
+        }
+    }
+
     header("Location: penjual.php");
     exit;
 }
 
+// =====================
 // AMBIL DATA PENJUAL
-$penjual = mysqli_query($conn, "SELECT * FROM users WHERE role='penjual' ORDER BY id_user DESC");
+// =====================
+$penjual = mysqli_query($conn, "
+    SELECT * FROM users 
+    WHERE role='penjual' 
+    ORDER BY id_user DESC
+");
 
-// Fungsi untuk cek status online/offline
+// =====================
+// FUNGSI STATUS ONLINE / OFFLINE
+// =====================
 function getStatus($last_activity) {
     if (!$last_activity) return 'offline';
+
     $last = strtotime($last_activity);
-    $now  = time();
-    $diff = $now - $last;
-    return ($diff <= 300) ? 'online' : 'offline'; // 5 menit = online
+    return ((time() - $last) <= 300) ? 'online' : 'offline';
 }
 ?>
 
@@ -175,16 +221,32 @@ function getStatus($last_activity) {
             </div>
             <div class="mt-4 md:mt-0 flex items-center gap-3">
                 <a href="register.php"
-   class="px-4 py-2 bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
-    <i class="fas fa-plus"></i>
-    Tambah Penjual
-</a>
+                class="px-4 py-2 bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
+                <i class="fas fa-plus"></i>
+                Tambah Penjual
+                </a>
                 <button class="px-4 py-2 bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
                     <i class="fas fa-download"></i>
                     Export Data
                 </button>
             </div>
         </div>
+
+                <?php if (isset($_SESSION['error'])): ?>
+            <div class="mb-6 px-4 py-3 rounded-xl bg-red-100 border border-red-300 text-red-700 flex items-center gap-3">
+                <i class="fas fa-exclamation-circle text-lg"></i>
+                <span><?= $_SESSION['error']; ?></span>
+            </div>
+            <?php unset($_SESSION['error']); ?>
+        <?php endif; ?>
+
+        <?php if (isset($_SESSION['success'])): ?>
+            <div class="mb-6 px-4 py-3 rounded-xl bg-green-100 border border-green-300 text-green-700 flex items-center gap-3">
+                <i class="fas fa-check-circle text-lg"></i>
+                <span><?= $_SESSION['success']; ?></span>
+            </div>
+            <?php unset($_SESSION['success']); ?>
+        <?php endif; ?>
 
         <!-- STATS SUMMARY -->
         <?php 
@@ -313,22 +375,22 @@ function getStatus($last_activity) {
                 
                 <!-- Action Buttons -->
                 <!-- Action Buttons -->
-<div class="flex gap-2">
-    <!-- Edit -->
-    <a href="edit_akun.php?id=<?= $row['id_user'] ?>" 
-       class="flex-1 gradient-accent text-white px-4 py-2.5 rounded-xl font-medium text-center hover:shadow-lg transition-shadow flex items-center justify-center gap-2">
-       <i class="fas fa-eye"></i>
-       <span>Edit</span>
-    </a>
+                <div class="flex gap-2">
+                    <!-- Edit -->
+                    <a href="edit_akun.php?id=<?= $row['id_user'] ?>" 
+                    class="flex-1 gradient-accent text-white px-4 py-2.5 rounded-xl font-medium text-center hover:shadow-lg transition-shadow flex items-center justify-center gap-2">
+                    <i class="fas fa-eye"></i>
+                    <span>Edit</span>
+                    </a>
 
-    <!-- Hapus -->
-    <a href="?hapus=<?= $row['id_user'] ?>" 
-       onclick="return confirm('Yakin hapus penjual <?= htmlspecialchars($row['nama']) ?>?')"
-       class="flex-1 bg-white border border-red-300 text-red-600 px-4 py-2.5 rounded-xl font-medium text-center hover:bg-red-50 transition-colors flex items-center justify-center gap-2">
-       <i class="fas fa-trash"></i>
-       <span>Hapus</span>
-    </a>
-</div>
+                    <!-- Hapus -->
+                    <a href="?hapus=<?= $row['id_user'] ?>" 
+                    onclick="return confirm('Yakin hapus penjual <?= htmlspecialchars($row['nama']) ?>?')"
+                    class="flex-1 bg-white border border-red-300 text-red-600 px-4 py-2.5 rounded-xl font-medium text-center hover:bg-red-50 transition-colors flex items-center justify-center gap-2">
+                    <i class="fas fa-trash"></i>
+                    <span>Hapus</span>
+                    </a>
+                </div>
 
             </div>
             <?php endwhile; ?>

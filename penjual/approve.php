@@ -3,56 +3,33 @@ session_start();
 require '../auth/connection.php';
 
 /* ======================
-   FUNCTION GLOBAL
+   VALIDASI LOGIN
 ====================== */
-function semuaPenjualSudahApprove($conn, $id_order) {
-    $q = mysqli_query($conn, "
-        SELECT COUNT(*) AS sisa
-        FROM order_details
-        WHERE id_order='$id_order'
-        AND status_detail!='approved'
-    ");
-    $c = mysqli_fetch_assoc($q);
-    return $c['sisa'] == 0;
-}
-
-
-if (!isset($_SESSION['id_user'])) {
-    die('SESSION id_user hilang');
-}
-
-if ($_SESSION['role'] !== 'penjual') {
-    die('Bukan penjual');
+if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'penjual') {
+    die('Akses ditolak');
 }
 
 $id_penjual = $_SESSION['id_user'];
 
 /* ======================
-   APPROVE ORDER (PER PENJUAL)
+   APPROVE PRODUK (PER PENJUAL)
 ====================== */
 if (isset($_POST['approve'])) {
-    if (!isset($_POST['id_detail']) || !isset($_POST['id_order'])) {
-        header("Location: approve.php");
-        exit;
-    }
 
     $id_detail = $_POST['id_detail'];
     $id_order  = $_POST['id_order'];
 
     // pastikan produk milik penjual ini
     $cek = mysqli_query($conn, "
-        SELECT COUNT(*) AS total
+        SELECT 1
         FROM order_details od
         JOIN produk p ON p.id_produk = od.id_produk
         WHERE od.id_detail='$id_detail'
         AND p.id_penjual='$id_penjual'
     ");
 
-    $c = mysqli_fetch_assoc($cek);
+    if (mysqli_num_rows($cek)) {
 
-    if ($c['total'] > 0) {
-
-        // approve hanya detail milik penjual ini
         mysqli_query($conn, "
             UPDATE order_details od
             JOIN produk p ON p.id_produk = od.id_produk
@@ -61,21 +38,25 @@ if (isset($_POST['approve'])) {
             AND p.id_penjual='$id_penjual'
         ");
 
-        // cek apakah semua penjual sudah approve
-        $cek_all = mysqli_query($conn, "
-            SELECT COUNT(*) AS sisa
+        // update status order global
+        $q = mysqli_query($conn, "
+            SELECT 
+                SUM(status_detail='approved') AS approved,
+                SUM(status_detail='ditolak') AS ditolak,
+                COUNT(*) AS total
             FROM order_details
             WHERE id_order='$id_order'
-            AND status_detail!='approved'
         ");
+        $r = mysqli_fetch_assoc($q);
 
-        $all = mysqli_fetch_assoc($cek_all);
-
-        // kalau semua sudah approve → siap kirim
-        if ($all['sisa'] == 0) {
+        if ($r['approved'] == $r['total']) {
             mysqli_query($conn, "
-                UPDATE orders
-                SET status='siap_dikirim'
+                UPDATE orders SET status='siap_dikirim'
+                WHERE id_order='$id_order'
+            ");
+        } else {
+            mysqli_query($conn, "
+                UPDATE orders SET status='parsial'
                 WHERE id_order='$id_order'
             ");
         }
@@ -86,31 +67,66 @@ if (isset($_POST['approve'])) {
 }
 
 /* ======================
-   TOLAK / REFUND
+   TOLAK / REFUND (PER PENJUAL)
 ====================== */
-if (isset($_POST['tolak']) && isset($_POST['id_detail'])) {
+if (isset($_POST['tolak'])) {
+
     $id_detail = $_POST['id_detail'];
 
+    // update HANYA detail penjual ini
     mysqli_query($conn, "
         UPDATE order_details od
         JOIN produk p ON p.id_produk = od.id_produk
-        JOIN orders o ON o.id_order = od.id_order
         SET 
-            od.status='refund',
-            o.status='refund',
-            o.refund_at=NOW()
+            od.status_detail='ditolak',
+            od.refund_at=NOW()
         WHERE od.id_detail='$id_detail'
         AND p.id_penjual='$id_penjual'
     ");
+
+    // ambil id_order
+    $q = mysqli_query($conn, "
+        SELECT id_order FROM order_details WHERE id_detail='$id_detail'
+    ");
+    $o = mysqli_fetch_assoc($q);
+    $id_order = $o['id_order'];
+
+    // cek kondisi order global
+    $cek = mysqli_query($conn, "
+        SELECT 
+            SUM(status_detail='approved') AS approved,
+            SUM(status_detail='ditolak') AS ditolak,
+            COUNT(*) AS total
+        FROM order_details
+        WHERE id_order='$id_order'
+    ");
+    $r = mysqli_fetch_assoc($cek);
+
+    if ($r['ditolak'] == $r['total']) {
+        // semua ditolak → refund total
+        mysqli_query($conn, "
+            UPDATE orders 
+            SET status='refund', refund_at=NOW()
+            WHERE id_order='$id_order'
+        ");
+    } else {
+        // sebagian ditolak → parsial
+        mysqli_query($conn, "
+            UPDATE orders 
+            SET status='parsial'
+            WHERE id_order='$id_order'
+        ");
+    }
 
     header("Location: approve.php");
     exit;
 }
 
 /* ======================
-   INPUT RESI (GLOBAL & TERKUNCI)
+   INPUT RESI (BOLEH JIKA ADA APPROVE)
 ====================== */
 if (isset($_POST['resi'])) {
+
     $id_detail = $_POST['id_detail'];
     $resi = mysqli_real_escape_string($conn, $_POST['no_resi']);
 
@@ -121,9 +137,17 @@ if (isset($_POST['resi'])) {
     $o = mysqli_fetch_assoc($q);
     $id_order = $o['id_order'];
 
-    // ❌ TOLAK kalau belum semua approve
-    if (!semuaPenjualSudahApprove($conn, $id_order)) {
-        header("Location: approve.php?error=belum_semua_approve");
+    // cek minimal 1 approved
+    $cek = mysqli_query($conn, "
+        SELECT COUNT(*) AS total
+        FROM order_details
+        WHERE id_order='$id_order'
+        AND status_detail='approved'
+    ");
+    $c = mysqli_fetch_assoc($cek);
+
+    if ($c['total'] == 0) {
+        header("Location: approve.php?error=tidak_ada_yang_diapprove");
         exit;
     }
 
@@ -143,20 +167,19 @@ if (isset($_POST['resi'])) {
 }
 
 /* ======================
-   DELETE SETELAH REFUND
+   DELETE DETAIL SETELAH REFUND (60 DETIK)
 ====================== */
 if (isset($_GET['delete'])) {
+
     $id_detail = $_GET['delete'];
 
     $cek = mysqli_query($conn, "
-        SELECT o.refund_at
+        SELECT od.refund_at
         FROM order_details od
         JOIN produk p ON p.id_produk = od.id_produk
-        JOIN orders o ON o.id_order = od.id_order
         WHERE od.id_detail='$id_detail'
         AND p.id_penjual='$id_penjual'
     ");
-
     $d = mysqli_fetch_assoc($cek);
 
     if ($d && strtotime($d['refund_at']) <= time() - 60) {
@@ -378,19 +401,30 @@ if (isset($_GET['delete'])) {
                     </form>
                   <?php } ?>
 
-                  <?php if (semuaPenjualSudahApprove($conn, $o['id_order']) && empty($o['no_resi'])) { ?>
-                    <!-- INPUT RESI -->
-                    <form method="post" action="approve.php" class="flex items-center gap-2">
-                      <input type="hidden" name="id_detail" value="<?= $o['id_detail'] ?>">
-                      <input type="text" name="no_resi" placeholder="No Resi"
-                        class="border border-gray-300 px-3 py-1.5 rounded-lg text-sm w-32 focus:ring-2 focus:ring-indigo-500"
-                        required>
-                      <button type="submit" name="resi"
-                        class="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 flex items-center gap-1">
-                        <i class="fas fa-save text-xs"></i> Simpan
-                      </button>
-                    </form>
-                  <?php } ?>
+                  <?php
+// cek apakah ada minimal 1 item approved di order ini
+$cekApprove = mysqli_query($conn, "
+    SELECT COUNT(*) AS total
+    FROM order_details
+    WHERE id_order='{$o['id_order']}'
+    AND status_detail='approved'
+");
+$ap = mysqli_fetch_assoc($cekApprove);
+?>
+
+<?php if ($ap['total'] > 0 && empty($o['no_resi'])) { ?>
+  <!-- INPUT RESI -->
+  <form method="post" action="approve.php" class="flex items-center gap-2">
+    <input type="hidden" name="id_detail" value="<?= $o['id_detail'] ?>">
+    <input type="text" name="no_resi" placeholder="No Resi"
+      class="border border-gray-300 px-3 py-1.5 rounded-lg text-sm w-32 focus:ring-2 focus:ring-indigo-500"
+      required>
+    <button type="submit" name="resi"
+      class="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 flex items-center gap-1">
+      <i class="fas fa-save text-xs"></i> Simpan
+    </button>
+  </form>
+<?php } ?>
 
                   <?php if ($o['status'] == 'refund' && $o['refund_at'] && strtotime($o['refund_at']) <= time() - 60) { ?>
                     <a href="approve.php?delete=<?= $o['id_detail'] ?>"

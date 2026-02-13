@@ -16,12 +16,32 @@ $query = mysqli_query ($conn, "SELECT * FROM users WHERE id_user='$id_user'");
 $data = mysqli_fetch_assoc($query);
 
 /* PROSES UPDATE */
+/* PROSES UPDATE */
 if (isset($_POST['update'])) {
 
     $nama   = $_POST['nama'];
     $email  = $_POST['email'];
     $alamat = $_POST['alamat'];
 
+    // =============================
+    // CEK EMAIL SUDAH DIGUNAKAN?
+    // =============================
+    $cekEmail = mysqli_query($conn, "
+        SELECT id_user FROM users 
+        WHERE email='$email' AND id_user != '$id_user'
+    ");
+
+    if (mysqli_num_rows($cekEmail) > 0) {
+        echo "<script>
+            alert('Email sudah digunakan oleh akun lain!');
+            history.back();
+        </script>";
+        exit;
+    }
+
+    // =============================
+    // UPLOAD FOTO (OPSIONAL)
+    // =============================
     if (!empty($_FILES['image']['name'])) {
         $folder = "../img/profile/";
         if (!is_dir($folder)) mkdir($folder, 0777, true);
@@ -38,12 +58,15 @@ if (isset($_POST['update'])) {
         $updateimage = "";
     }
 
+    // =============================
+    // UPDATE DATA
+    // =============================
     mysqli_query($conn, "
         UPDATE users SET
-        nama='$nama',
-        email='$email',
-        alamat='$alamat'
-        $updateimage
+            nama='$nama',
+            email='$email',
+            alamat='$alamat'
+            $updateimage
         WHERE id_user='$id_user'
     ");
 

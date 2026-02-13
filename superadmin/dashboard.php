@@ -303,12 +303,12 @@ mysqli_query($conn, "UPDATE users SET last_activity=NOW() WHERE id_user='$id_use
                     <button class="bg-white text-indigo-600 px-4 md:px-6 py-2 md:py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 text-sm md:text-base">
                         <i class="fas fa-rocket mr-2"></i>Quick Tour
                     </button>
-                    <a href="admin.php" class="bg-transparent border-2 border-white/30 text-white px-4 md:px-6 py-2 md:py-3 rounded-xl font-medium hover:bg-white/10 transition-all duration-300 text-sm md:text-base">
+                    <!-- <a href="admin.php" class="bg-transparent border-2 border-white/30 text-white px-4 md:px-6 py-2 md:py-3 rounded-xl font-medium hover:bg-white/10 transition-all duration-300 text-sm md:text-base">
                         <i class="fas fa-user-shield mr-2"></i>Manage Admins
                     </a>
                     <a href="analytics.php" class="bg-transparent border-2 border-white/30 text-white px-4 md:px-6 py-2 md:py-3 rounded-xl font-medium hover:bg-white/10 transition-all duration-300 text-sm md:text-base">
                         <i class="fas fa-chart-line mr-2"></i>View Analytics
-                    </a>
+                    </a> -->
                 </div>
             </div>
             <div class="mt-8 lg:mt-0 lg:pl-8">
