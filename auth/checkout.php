@@ -36,9 +36,8 @@ if (mysqli_num_rows($cartQ) == 0) {
 }
 
 $total_penjualan = 0;
-$total_modal     = 0;
-$items           = [];
-$pembayaran      = []; // GROUP PER PENJUAL
+$pembayaran = [];          // UNTUK TAMPILAN
+$itemsPerPenjual = [];    // UNTUK CHECKOUT
 
 while ($c = mysqli_fetch_assoc($cartQ)) {
 
@@ -46,26 +45,29 @@ while ($c = mysqli_fetch_assoc($cartQ)) {
         die("Stok {$c['nama_buku']} tidak cukup");
     }
 
-    $subtotal_jual  = $c['qty'] * $c['harga'];
+    $subtotal_penjualan  = $c['qty'] * $c['harga'];
     $subtotal_modal = $c['qty'] * $c['modal'];
 
-    $total_penjualan += $subtotal_jual;
-    $total_modal     += $subtotal_modal;
+    $total_penjualan += $subtotal_penjualan;
 
-    /* SIMPAN ITEM */
-    $items[] = [
+    $id_penjual = $c['id_penjual'];
+
+    /* =====================
+       GROUP ITEM PER PENJUAL
+    ===================== */
+    $itemsPerPenjual[$id_penjual][] = [
         'id_produk'      => $c['id_produk'],
         'nama_buku'      => $c['nama_buku'],
         'qty'            => $c['qty'],
         'harga'          => $c['harga'],
         'modal'          => $c['modal'],
-        'subtotal_jual'  => $subtotal_jual,
+        'subtotal_penjualan'  => $subtotal_penjualan,
         'subtotal_modal' => $subtotal_modal
     ];
 
-    /* GROUP PEMBAYARAN PER TOKO */
-    $id_penjual = $c['id_penjual'];
-
+    /* =====================
+       GROUP PEMBAYARAN (UI)
+    ===================== */
     if (!isset($pembayaran[$id_penjual])) {
         $pembayaran[$id_penjual] = [
             'nama_toko' => $c['nama_toko'],
@@ -76,12 +78,9 @@ while ($c = mysqli_fetch_assoc($cartQ)) {
         ];
     }
 
-    $pembayaran[$id_penjual]['total'] += $subtotal_jual;
+    $pembayaran[$id_penjual]['total'] += $subtotal_penjualan;
 }
 
-/* =====================
-   PROSES CHECKOUT
-===================== */
 if (isset($_POST['checkout'])) {
 
     $metode = $_POST['metode'] ?? '';
@@ -89,46 +88,66 @@ if (isset($_POST['checkout'])) {
         die('Metode pembayaran tidak valid');
     }
 
-    $kode_pesanan = 'ORD' . date('YmdHis');
+    foreach ($itemsPerPenjual as $id_penjual => $items) {
 
-    mysqli_query($conn, "
-        INSERT INTO orders
-        (kode_pesanan, id_pembeli, total_harga, status, metode_pembayaran, bukti_tf, created_at)
-        VALUES
-        ('$kode_pesanan', '$id_user', '$total_penjualan', 'pending', '$metode', '{}', NOW())
-    ") or die(mysqli_error($conn));
+        $total_penjual = 0;
+        $total_modal   = 0;
 
-    $id_order = mysqli_insert_id($conn);
+        foreach ($items as $i) {
+            $total_penjual += $i['subtotal_penjualan'];
+            $total_modal   += $i['subtotal_modal'];
+        }
 
-    foreach ($items as $i) {
+        $kode_pesanan = 'ORD' . date('YmdHis') . rand(100,999);
 
+        // ======================
+        // INSERT ORDER (1 PENJUAL)
+        // ======================
         mysqli_query($conn, "
-            INSERT INTO order_details
-            (id_order, id_produk, nama_buku, qty, harga, modal, subtotal_penjualan, subtotal_modal)
-            VALUES (
-                '$id_order',
-                '{$i['id_produk']}',
-                '{$i['nama_buku']}',
-                '{$i['qty']}',
-                '{$i['harga']}',
-                '{$i['modal']}',
-                '{$i['subtotal_jual']}',
-                '{$i['subtotal_modal']}'
-            )
-        ");
+            INSERT INTO orders
+            (kode_pesanan, id_pembeli, total_harga, total_modal, status, metode_pembayaran, bukti_tf, created_at)
+            VALUES
+            ('$kode_pesanan', '$id_user', '$total_penjual', '$total_modal', 'pending', '$metode', '', NOW())
+        ") or die(mysqli_error($conn));
 
-        mysqli_query($conn, "
-            UPDATE produk
-            SET stok = stok - {$i['qty']}
-            WHERE id_produk = {$i['id_produk']}
-        ");
+        $id_order = mysqli_insert_id($conn);
+
+        // ======================
+        // INSERT DETAIL + UPDATE STOK
+        // ======================
+        foreach ($items as $i) {
+
+            mysqli_query($conn, "
+                INSERT INTO order_details
+                (id_order, id_produk, id_penjual, nama_buku, qty, harga, modal, subtotal_penjualan, subtotal_modal, status_detail)
+                VALUES (
+                    '$id_order',
+                    '{$i['id_produk']}',
+                    '$id_penjual',
+                    '{$i['nama_buku']}',
+                    '{$i['qty']}',
+                    '{$i['harga']}',
+                    '{$i['modal']}',
+                    '{$i['subtotal_penjualan']}',
+                    '{$i['subtotal_modal']}',
+                    'pending'
+                )
+            ");
+
+            mysqli_query($conn, "
+                UPDATE produk
+                SET stok = stok - {$i['qty']}
+                WHERE id_produk = {$i['id_produk']}
+            ");
+        }
     }
 
-    mysqli_query($conn, "
-        DELETE FROM keranjang WHERE id_user = '$id_user'
-    ");
+    // ======================
+    // HAPUS KERANJANG
+    // ======================
+    mysqli_query($conn, "DELETE FROM keranjang WHERE id_user = '$id_user'");
 
-    header("Location: ../pembeli/invoice.php?id_order=$id_order");
+    header("Location: ../pembeli/invoice.php");
     exit;
 }
 ?>

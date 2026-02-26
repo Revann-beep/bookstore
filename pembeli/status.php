@@ -41,14 +41,17 @@ if ($userResult && mysqli_num_rows($userResult) > 0) {
 $q = mysqli_query($conn, "
     SELECT 
         o.id_order,
-        o.status AS status_order,
         o.bukti_tf,
         o.metode_pembayaran,
-        o.no_resi,
         o.alamat_pembeli,
+
         od.id_detail,
         od.qty,
         od.status_detail,
+        od.no_resi,
+        od.link_lacak,
+        od.ekspedisi,
+
         p.nama_buku
     FROM orders o
     JOIN order_details od ON o.id_order = od.id_order
@@ -179,11 +182,11 @@ $total_orders = mysqli_num_rows($q);
     $total_orders = mysqli_num_rows($q);
     $pending = 0; $menunggu_verifikasi = 0; $paid = 0; $dikirim = 0; $refund = 0;
     while ($d = mysqli_fetch_assoc($q)) {
-      if ($d['status_order'] == 'pending') $pending++;
-      if ($d['status_order'] == 'menunggu_verifikasi') $pending++;
-      if ($d['status_order'] == 'paid') $paid++;
-      if ($d['status_order'] == 'dikirim') $dikirim++;
-      if ($d['status_order'] == 'refund') $refund++;
+      if ($d['status_detail'] == 'pending') $pending++;
+      if ($d['status_detail'] == 'menunggu_verifikasi') $pending++;
+      if ($d['status_detail'] == 'paid') $paid++;
+      if ($d['status_detail'] == 'dikirim') $dikirim++;
+      if ($d['status_detail'] == 'refund') $refund++;
     }
     mysqli_data_seek($q, 0);
     ?>
@@ -325,12 +328,14 @@ $total_orders = mysqli_num_rows($q);
 $statusColors = [
   'pending' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
   'menunggu_verifikasi' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
+  'approved' => 'bg-green-100 text-green-800 border-green-200',
   'paid' => 'bg-green-100 text-green-800 border-green-200',
   'dikirim' => 'bg-blue-100 text-blue-800 border-blue-200',
+  'tolak' => 'bg-red-100 text-red-800 border-red-200',
   'refund' => 'bg-purple-100 text-purple-800 border-purple-200'
 ];
 
-$status = $d['status_order'] ?? 'pending';
+$status = $d['status_detail'] ?? 'pending';
 $color  = $statusColors[$status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
 ?>
 
@@ -339,10 +344,12 @@ $color  = $statusColors[$status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
     <div class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
   <?php elseif ($status === 'menunggu_verifikasi'): ?>
     <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
-  <?php elseif ($status === 'paid'): ?>
+  <?php elseif ($status === 'approved' || $status === 'paid'): ?>
     <div class="w-2 h-2 rounded-full bg-green-500"></div>
   <?php elseif ($status === 'dikirim'): ?>
     <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+  <?php elseif ($status === 'tolak'): ?>
+    <div class="w-2 h-2 rounded-full bg-red-500"></div>
   <?php elseif ($status === 'refund'): ?>
     <div class="w-2 h-2 rounded-full bg-purple-500"></div>
   <?php else: ?>
@@ -353,7 +360,17 @@ $color  = $statusColors[$status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
 </div>
 
 <div class="text-xs text-slate-500 mt-1">
-  <?= $status === 'paid' ? 'Disetujui' : 'Menunggu' ?>
+  <?php
+    if ($status === 'approved' || $status === 'paid') {
+        echo 'Disetujui';
+    } elseif ($status === 'tolak') {
+        echo 'Ditolak';
+    } elseif ($status === 'refund') {
+        echo 'Dikembalikan';
+    } else {
+        echo 'Menunggu';
+    }
+  ?>
 </div>
 </td>
             
@@ -362,13 +379,17 @@ $color  = $statusColors[$status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
               <div class="flex gap-2">
 
                 <!-- LACAK (hanya jika dikirim & ada resi) -->
-                <?php if (($d['status_order'] ?? '') === 'dikirim' && !empty($d['no_resi'])): ?>
-                  <a href="../auth/track.php?id_order=<?= (int)$d['id_order'] ?>"
-                    class="flex items-center gap-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition shadow">
-                    <i class="fas fa-map-marker-alt text-sm"></i>
-                    Lacak
-                  </a>
-                <?php endif; ?>
+                <?php if (
+    ($d['status_detail'] ?? '') === 'dikirim'
+    && !empty($d['no_resi'])
+    && !empty($d['link_lacak'])
+): ?>
+  <a href="<?= htmlspecialchars($d['link_lacak']) ?>"
+     target="_blank"
+     class="flex items-center gap-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition shadow">
+    🚚 Lacak Paket
+  </a>
+<?php endif; ?>
 
                 <!-- INVOICE -->
                 <a href="invoice.php?id_order=<?= (int)$d['id_order'] ?>"
@@ -378,13 +399,13 @@ $color  = $statusColors[$status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
                 </a>
 
                 <!-- UPLOAD BUKTI -->
-                <?php if (($d['status_order'] ?? '') === 'pending' && empty($d['bukti_tf'])): ?>
+                <!-- <?php if (($d['status_detail'] ?? '') === 'pending' && empty($d['bukti_tf'])): ?>
                   <a href="../auth/upload-bukti.php?id_order=<?= (int)$d['id_order'] ?>"
                     class="flex items-center gap-1 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-medium transition shadow">
                     <i class="fas fa-upload text-sm"></i>
                     Upload
                   </a>
-                <?php endif; ?>
+                <?php endif; ?> -->
 
               </div>
             </td>

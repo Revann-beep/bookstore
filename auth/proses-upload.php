@@ -63,9 +63,9 @@ if (isset($bukti_arr[$id_penjual])) {
 
 /* SIMPAN BUKTI BARU */
 $bukti_arr[$id_penjual] = [
-    'file'        => $namaFile,
-    'uploaded_at'=> date('Y-m-d H:i:s'),
-    'status'      => 'uploaded'
+    'file'         => $namaFile,
+    'uploaded_at'  => date('Y-m-d H:i:s'),
+    'status'       => 'uploaded'
 ];
 
 /* =======================
@@ -82,14 +82,14 @@ $total_penjual = mysqli_num_rows($penjualQ);
 $total_upload  = count($bukti_arr);
 
 /* =======================
-   TENTUKAN STATUS
+   TENTUKAN STATUS ORDER
 ======================= */
 $status_baru = ($total_upload >= $total_penjual)
     ? 'menunggu_verifikasi'
     : 'pending';
 
 /* =======================
-   UPDATE ORDER
+   UPDATE ORDERS
 ======================= */
 $json = json_encode($bukti_arr);
 
@@ -102,11 +102,26 @@ $update = mysqli_query($conn, "
 ");
 
 if (!$update) {
-    die("Error MySQL: " . mysqli_error($conn));
+    die("Error MySQL orders: " . mysqli_error($conn));
 }
 
 /* =======================
-   REDIRECT KE INVOICE
+   UPDATE STATUS DETAIL (PER PENJUAL)  ⭐ FIX UTAMA
+======================= */
+$updateDetail = mysqli_query($conn, "
+    UPDATE order_details od
+    JOIN produk p ON p.id_produk = od.id_produk
+    SET od.status_detail = 'menunggu_verifikasi'
+    WHERE od.id_order = '$id_order'
+      AND p.id_penjual = '$id_penjual'
+");
+
+if (!$updateDetail) {
+    die("Error MySQL detail: " . mysqli_error($conn));
+}
+
+/* =======================
+   REDIRECT
 ======================= */
 header("Location: ../pembeli/invoice.php?id_order=$id_order");
 exit;

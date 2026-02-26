@@ -6,7 +6,7 @@ require '../auth/connection.php';
    VALIDASI LOGIN
 ====================== */
 if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'penjual') {
-    die('Akses ditolak');
+    die('Akses tolak');
 }
 
 $id_penjual = $_SESSION['id_user'];
@@ -42,7 +42,7 @@ if (isset($_POST['approve'])) {
         $q = mysqli_query($conn, "
             SELECT 
                 SUM(status_detail='approved') AS approved,
-                SUM(status_detail='ditolak') AS ditolak,
+                SUM(status_detail='tolak') AS tolak,
                 COUNT(*) AS total
             FROM order_details
             WHERE id_order='$id_order'
@@ -78,7 +78,7 @@ if (isset($_POST['tolak'])) {
         UPDATE order_details od
         JOIN produk p ON p.id_produk = od.id_produk
         SET 
-            od.status_detail='ditolak',
+            od.status_detail='tolak',
             od.refund_at=NOW()
         WHERE od.id_detail='$id_detail'
         AND p.id_penjual='$id_penjual'
@@ -95,22 +95,22 @@ if (isset($_POST['tolak'])) {
     $cek = mysqli_query($conn, "
         SELECT 
             SUM(status_detail='approved') AS approved,
-            SUM(status_detail='ditolak') AS ditolak,
+            SUM(status_detail='tolak') AS tolak,
             COUNT(*) AS total
         FROM order_details
         WHERE id_order='$id_order'
     ");
     $r = mysqli_fetch_assoc($cek);
 
-    if ($r['ditolak'] == $r['total']) {
-        // semua ditolak → refund total
+    if ($r['tolak'] == $r['total']) {
+        // semua tolak → refund total
         mysqli_query($conn, "
             UPDATE orders 
             SET status='refund', refund_at=NOW()
             WHERE id_order='$id_order'
         ");
     } else {
-        // sebagian ditolak → parsial
+        // sebagian tolak → parsial
         mysqli_query($conn, "
             UPDATE orders 
             SET status='parsial'
@@ -123,46 +123,88 @@ if (isset($_POST['tolak'])) {
 }
 
 /* ======================
-   INPUT RESI (BOLEH JIKA ADA APPROVE)
+   INPUT RESI (PER DETAIL / PER PENJUAL)
 ====================== */
 if (isset($_POST['resi'])) {
 
     $id_detail = $_POST['id_detail'];
-    $resi = mysqli_real_escape_string($conn, $_POST['no_resi']);
+    $ekspedisi = mysqli_real_escape_string($conn, $_POST['ekspedisi']);
+    $no_resi = mysqli_real_escape_string($conn, $_POST['no_resi']);
+    
+    // Generate link lacak berdasarkan ekspedisi
+    $link_lacak = '';
+    switch($ekspedisi) {
+        case 'jne':
+            $link_lacak = "https://cekresi.com/jne/$no_resi";
+            break;
+        case 'jnt':
+            $link_lacak = "https://cekresi.com/jnt/$no_resi";
+            break;
+        case 'sicepat':
+            $link_lacak = "https://cekresi.com/sicepat/$no_resi";
+            break;
+        case 'pos':
+            $link_lacak = "https://cekresi.com/pos-indonesia/$no_resi";
+            break;
+        case 'tiki':
+            $link_lacak = "https://cekresi.com/tiki/$no_resi";
+            break;
+        case 'wahana':
+            $link_lacak = "https://cekresi.com/wahana/$no_resi";
+            break;
+        case 'ninja':
+            $link_lacak = "https://cekresi.com/ninja-express/$no_resi";
+            break;
+        case 'anteraja':
+            $link_lacak = "https://cekresi.com/anteraja/$no_resi";
+            break;
+        case 'idexpress':
+            $link_lacak = "https://cekresi.com/idexpress/$no_resi";
+            break;
+        default:
+            $link_lacak = "https://cekresi.com/track?resi=$no_resi";
+    }
 
-    // ambil id_order
-    $q = mysqli_query($conn, "
-        SELECT id_order FROM order_details WHERE id_detail='$id_detail'
-    ");
-    $o = mysqli_fetch_assoc($q);
-    $id_order = $o['id_order'];
-
-    // cek minimal 1 approved
+    // pastikan detail ini milik penjual & sudah approved
     $cek = mysqli_query($conn, "
-        SELECT COUNT(*) AS total
-        FROM order_details
-        WHERE id_order='$id_order'
-        AND status_detail='approved'
+        SELECT od.id_order
+        FROM order_details od
+        JOIN produk p ON p.id_produk = od.id_produk
+        WHERE od.id_detail='$id_detail'
+        AND p.id_penjual='$id_penjual'
+        AND od.status_detail='approved'
+        AND od.no_resi IS NULL
     ");
-    $c = mysqli_fetch_assoc($cek);
 
-    if ($c['total'] == 0) {
-        header("Location: approve.php?error=tidak_ada_yang_diapprove");
+    if (!mysqli_num_rows($cek)) {
+        header("Location: approve.php?error=tidak_valid");
         exit;
     }
 
-    // simpan resi (HANYA SEKALI)
+    $d = mysqli_fetch_assoc($cek);
+    $id_order = $d['id_order'];
+
+    // simpan resi, ekspedisi, dan link lacak untuk detail ini
     mysqli_query($conn, "
-        UPDATE orders
-        SET 
-            no_resi='$resi',
-            link_lacak='https://tracking-dummy.com/lacak?resi=$resi',
-            status='dikirim'
-        WHERE id_order='$id_order'
-        AND no_resi IS NULL
+                  UPDATE order_details
+          SET 
+              ekspedisi='$ekspedisi',
+              no_resi='$no_resi',
+              link_lacak='$link_lacak',
+              status_detail='dikirim',
+              shipped_at=NOW()
+          WHERE id_detail='$id_detail'
     ");
 
-    header("Location: approve.php");
+    // update status global order (ringkasan)
+    mysqli_query($conn, "
+        UPDATE orders
+        SET status='parsial'
+        WHERE id_order='$id_order'
+        AND status NOT IN ('refund','selesai')
+    ");
+
+    header("Location: approve.php?success=resi_tersimpan");
     exit;
 }
 
@@ -194,8 +236,49 @@ if (isset($_GET['delete'])) {
     header("Location: approve.php");
     exit;
 }
-?>
 
+/* ======================
+   PAGINATION
+====================== */
+$limit = 7; // Data per halaman
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$offset = ($page - 1) * $limit;
+
+// Hitung total data
+$total_query = mysqli_query($conn, "
+    SELECT COUNT(*) as total
+    FROM order_details od
+    JOIN orders o ON o.id_order = od.id_order
+    JOIN produk p ON p.id_produk = od.id_produk
+    WHERE p.id_penjual = '$id_penjual'
+");
+$total_row = mysqli_fetch_assoc($total_query);
+$total_data = $total_row['total'];
+$total_pages = ceil($total_data / $limit);
+
+// Query dengan limit
+$q = mysqli_query($conn, "
+    SELECT 
+        od.id_detail,
+        od.qty,
+        od.nama_buku,
+        od.status_detail,
+        od.ekspedisi,
+        od.no_resi,
+        od.link_lacak,
+        od.refund_at,
+        o.id_order,
+        o.kode_pesanan,
+        o.metode_pembayaran,
+        o.bukti_tf
+    FROM order_details od
+    JOIN orders o ON o.id_order = od.id_order
+    JOIN produk p ON p.id_produk = od.id_produk
+    WHERE p.id_penjual = '$id_penjual'
+    ORDER BY o.id_order DESC
+    LIMIT $offset, $limit
+");
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -211,6 +294,19 @@ if (isset($_GET['delete'])) {
     .status-shipped { @apply bg-blue-100 text-blue-800; }
     .status-refund { @apply bg-red-100 text-red-800; }
     .status-completed { @apply bg-green-100 text-green-800; }
+    
+    .pagination-btn {
+      @apply px-3 py-2 rounded-lg text-sm font-medium transition-colors;
+    }
+    .pagination-btn-active {
+      @apply bg-indigo-600 text-white hover:bg-indigo-700;
+    }
+    .pagination-btn-inactive {
+      @apply bg-white text-gray-700 hover:bg-gray-50 border border-gray-300;
+    }
+    .pagination-btn-disabled {
+      @apply bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200;
+    }
   </style>
 </head>
 
@@ -280,6 +376,13 @@ if (isset($_GET['delete'])) {
           <p class="text-gray-600">Kelola dan verifikasi pesanan pelanggan</p>
         </div>
       </div>
+      
+      <!-- Info Pagination -->
+      <div class="flex justify-between items-center mt-4">
+        <p class="text-sm text-gray-600">
+          Menampilkan <?= min($offset + 1, $total_data) ?> - <?= min($offset + $limit, $total_data) ?> dari <?= $total_data ?> pesanan
+        </p>
+      </div>
     </div>
 
     <!-- TABLE -->
@@ -300,31 +403,11 @@ if (isset($_GET['delete'])) {
           </thead>
           <tbody>
             <?php
-            $q = mysqli_query($conn, "
-                SELECT 
-                    od.id_detail,
-                    od.qty,
-                    od.nama_buku,
-                    o.id_order,
-                    o.status,
-                    o.no_resi,
-                    o.link_lacak,
-                    o.refund_at,
-                    o.kode_pesanan,
-                    o.metode_pembayaran,
-                    o.bukti_tf
-                FROM order_details od
-                JOIN orders o ON o.id_order = od.id_order
-                JOIN produk p ON p.id_produk = od.id_produk
-                WHERE p.id_penjual = '$id_penjual'
-                ORDER BY o.id_order DESC
-            ");
-            
             if ($q && mysqli_num_rows($q) > 0) {
                 while ($o = mysqli_fetch_assoc($q)) {
                     // Determine status badge class
                     $statusClass = '';
-                    switch($o['status']) {
+                    switch($status = $o['status_detail'] ?? 'pending') {
                         case 'menunggu_verifikasi': $statusClass = 'status-waiting'; break;
                         case 'dikirim': $statusClass = 'status-shipped'; break;
                         case 'refund': $statusClass = 'status-refund'; break;
@@ -339,6 +422,23 @@ if (isset($_GET['delete'])) {
                         if ($bukti_arr && isset($bukti_arr[$id_penjual]['file'])) {
                             $bukti = $bukti_arr[$id_penjual]['file'];
                         }
+                    }
+                    
+                    // Format ekspedisi untuk tampilan
+                    $nama_ekspedisi = '';
+                    if (!empty($o['ekspedisi'])) {
+                        $ekspedisi_list = [
+                            'jne' => 'JNE',
+                            'jnt' => 'J&T',
+                            'sicepat' => 'SiCepat',
+                            'pos' => 'Pos Indonesia',
+                            'tiki' => 'TIKI',
+                            'wahana' => 'Wahana',
+                            'ninja' => 'Ninja Express',
+                            'anteraja' => 'AnterAja',
+                            'idexpress' => 'ID Express'
+                        ];
+                        $nama_ekspedisi = $ekspedisi_list[$o['ekspedisi']] ?? ucfirst($o['ekspedisi']);
                     }
             ?>
             <tr class="border-b hover:bg-gray-50">
@@ -364,23 +464,26 @@ if (isset($_GET['delete'])) {
               <td class="p-4 text-gray-700"><?= htmlspecialchars($o['metode_pembayaran']) ?></td>
               <td class="p-4">
                 <span class="status-badge <?= $statusClass ?>">
-                  <?= htmlspecialchars(ucfirst(str_replace('_', ' ', $o['status']))) ?>
+                  <?= htmlspecialchars(ucfirst(str_replace('_', ' ', $o['status_detail']))) ?>
                 </span>
               </td>
               <td class="p-4">
                 <?php if($o['no_resi']) { ?>
-                <a href="../auth/track.php?resi=<?= urlencode($o['no_resi']) ?>"
-                   target="_blank"
-                   class="text-indigo-600 hover:underline text-sm">
-                   Lacak Pesanan
-                </a>
+                <div class="flex flex-col">
+                  <span class="text-xs text-gray-500"><?= $nama_ekspedisi ?></span>
+                  <a href="<?= htmlspecialchars($o['link_lacak']) ?>" 
+                     target="_blank"
+                     class="text-indigo-600 hover:underline text-sm">
+                     <i class="fas fa-truck"></i> <?= htmlspecialchars($o['no_resi']) ?>
+                  </a>
+                </div>
                 <?php } else { ?>
                 <span class="text-gray-400 text-sm">Belum ada</span>
                 <?php } ?>
               </td>
               <td class="p-4">
                 <div class="flex flex-wrap gap-2">
-                  <?php if ($o['status'] == 'menunggu_verifikasi') { ?>
+                  <?php if (in_array($o['status_detail'], ['pending','menunggu_verifikasi']))  { ?>
                     <!-- APPROVE -->
                     <form method="post" action="approve.php">
                       <input type="hidden" name="id_detail" value="<?= $o['id_detail'] ?>">
@@ -412,22 +515,50 @@ $cekApprove = mysqli_query($conn, "
 $ap = mysqli_fetch_assoc($cekApprove);
 ?>
 
-<?php if ($ap['total'] > 0 && empty($o['no_resi'])) { ?>
-  <!-- INPUT RESI -->
-  <form method="post" action="approve.php" class="flex items-center gap-2">
+<?php if ($o['status_detail'] == 'approved' && empty($o['no_resi'])) { ?>
+  <!-- INPUT RESI DENGAN DROPDOWN EKSPEDISI -->
+  <form method="post" action="approve.php" class="flex flex-col gap-2 min-w-[250px] border border-gray-200 p-3 rounded-lg bg-gray-50">
     <input type="hidden" name="id_detail" value="<?= $o['id_detail'] ?>">
-    <input type="text" name="no_resi" placeholder="No Resi"
-      class="border border-gray-300 px-3 py-1.5 rounded-lg text-sm w-32 focus:ring-2 focus:ring-indigo-500"
-      required>
+    
+    <div>
+      <label class="block text-xs font-medium text-gray-700 mb-1">Pilih Ekspedisi</label>
+      <select name="ekspedisi" required
+        class="w-full border border-gray-300 px-3 py-1.5 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 bg-white">
+        <option value="">-- Pilih Ekspedisi --</option>
+        <option value="jne">JNE</option>
+        <option value="jnt">J&T Express</option>
+        <option value="sicepat">SiCepat</option>
+        <option value="pos">Pos Indonesia</option>
+        <option value="tiki">TIKI</option>
+        <option value="wahana">Wahana</option>
+        <option value="ninja">Ninja Express</option>
+        <option value="anteraja">AnterAja</option>
+        <option value="idexpress">ID Express</option>
+      </select>
+    </div>
+    
+    <div>
+      <label class="block text-xs font-medium text-gray-700 mb-1">No. Resi</label>
+      <input type="text" name="no_resi" placeholder="Masukkan No. Resi"
+        class="w-full border border-gray-300 px-3 py-1.5 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+        required>
+    </div>
+    
     <button type="submit" name="resi"
-      class="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 flex items-center gap-1">
-      <i class="fas fa-save text-xs"></i> Simpan
+      class="mt-1 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 flex items-center justify-center gap-1">
+      <i class="fas fa-save text-xs"></i> Simpan Resi
     </button>
   </form>
 <?php } ?>
 
-                  <?php if ($o['status'] == 'refund' && $o['refund_at'] && strtotime($o['refund_at']) <= time() - 60) { ?>
-                    <a href="approve.php?delete=<?= $o['id_detail'] ?>"
+                  <?php 
+if (
+    in_array($o['status_detail'], ['tolak','refund']) &&
+    !empty($o['refund_at']) &&
+    strtotime($o['refund_at']) <= time() - 60
+) { 
+?>
+                    <a href="approve.php?delete=<?= $o['id_detail'] ?>&page=<?= $page ?>"
                        onclick="return confirm('Yakin hapus pesanan ini?')"
                        class="px-3 py-1.5 bg-gray-700 text-white rounded-lg text-sm hover:bg-gray-800 flex items-center gap-1">
                       <i class="fas fa-trash-alt text-xs"></i> Delete
@@ -450,6 +581,48 @@ $ap = mysqli_fetch_assoc($cekApprove);
         </table>
       </div>
     </div>
+
+    <!-- PAGINATION -->
+    <?php if ($total_pages > 1): ?>
+    <div class="mt-6 flex justify-center">
+      <div class="flex gap-2">
+        <!-- Tombol Previous -->
+        <?php if ($page > 1): ?>
+          <a href="?page=<?= $page - 1 ?>" class="pagination-btn pagination-btn-inactive">
+            <i class="fas fa-chevron-left text-xs"></i> Prev
+          </a>
+        <?php else: ?>
+          <span class="pagination-btn pagination-btn-disabled">
+            <i class="fas fa-chevron-left text-xs"></i> Prev
+          </span>
+        <?php endif; ?>
+
+        <!-- Nomor Halaman -->
+        <?php
+        $start_page = max(1, $page - 2);
+        $end_page = min($total_pages, $page + 2);
+        
+        for ($i = $start_page; $i <= $end_page; $i++):
+        ?>
+          <a href="?page=<?= $i ?>" 
+             class="pagination-btn <?= $i == $page ? 'pagination-btn-active' : 'pagination-btn-inactive' ?>">
+            <?= $i ?>
+          </a>
+        <?php endfor; ?>
+
+        <!-- Tombol Next -->
+        <?php if ($page < $total_pages): ?>
+          <a href="?page=<?= $page + 1 ?>" class="pagination-btn pagination-btn-inactive">
+            Next <i class="fas fa-chevron-right text-xs"></i>
+          </a>
+        <?php else: ?>
+          <span class="pagination-btn pagination-btn-disabled">
+            Next <i class="fas fa-chevron-right text-xs"></i>
+          </span>
+        <?php endif; ?>
+      </div>
+    </div>
+    <?php endif; ?>
 
     <!-- FOOTNOTE -->
     <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">

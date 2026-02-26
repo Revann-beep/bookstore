@@ -2,6 +2,8 @@
 session_start();
 require '../auth/connection.php';
 
+$id_penjual = $_SESSION['id_user'];
+
 // CEK ROLE
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'penjual') {
     header("Location: ../login.php");
@@ -18,7 +20,11 @@ $start = ($page - 1) * $limit;
 // FILTER BULAN TAHUN
 $bulan = isset($_GET['bulan']) ? $_GET['bulan'] : date('m');
 $tahun = isset($_GET['tahun']) ? $_GET['tahun'] : date('Y');
-$filter = "WHERE MONTH(t.created_at)='$bulan' AND YEAR(t.created_at)='$tahun'";
+$filter = "
+WHERE p.id_penjual = '$id_penjual'
+AND MONTH(t.created_at)='$bulan'
+AND YEAR(t.created_at)='$tahun'
+";
 
 // DOWNLOAD CSV
 if (isset($_GET['download']) && $_GET['download'] == 'csv') {
@@ -28,12 +34,21 @@ if (isset($_GET['download']) && $_GET['download'] == 'csv') {
     $output = fopen("php://output", "w");
     fputcsv($output, ['Kode Pesanan','Nama Buku','Qty','Bukti TF','Metode Pembayaran','Total Modal','Total Penjualan','Total Keuntungan']);
     
-    $sql = "SELECT t.kode_pesanan, td.nama_buku, td.qty, t.bukti_tf, t.metode_pembayaran, 
-                   td.subtotal_modal AS total_modal, td.subtotal_penjualan AS total_penjualan, 
-                   (td.subtotal_penjualan - td.subtotal_modal) AS total_keuntungan
-            FROM orders t
-            JOIN order_details td ON t.id_order = td.id_order
-            $filter";
+    $sql = "
+SELECT 
+    t.kode_pesanan,
+    td.nama_buku,
+    td.qty,
+    t.bukti_tf,
+    t.metode_pembayaran,
+    td.subtotal_modal AS total_modal,
+    td.subtotal_penjualan AS total_penjualan,
+    (td.subtotal_penjualan - td.subtotal_modal) AS total_keuntungan
+FROM orders t
+JOIN order_details td ON t.id_order = td.id_order
+JOIN produk p ON p.id_produk = td.id_produk
+$filter
+";
     
     $query = mysqli_query($conn, $sql);
     while ($row = mysqli_fetch_assoc($query)) {
@@ -44,18 +59,33 @@ if (isset($_GET['download']) && $_GET['download'] == 'csv') {
 }
 
 // HITUNG TOTAL DATA
-$totalQuery = mysqli_query($conn, "SELECT COUNT(*) as total FROM orders t JOIN order_details td ON t.id_order = td.id_order $filter");
+$totalQuery = mysqli_query($conn, "
+SELECT COUNT(*) as total
+FROM orders t
+JOIN order_details td ON t.id_order = td.id_order
+JOIN produk p ON p.id_produk = td.id_produk
+$filter
+");
 $totalData = mysqli_fetch_assoc($totalQuery)['total'];
 $totalPage = ceil($totalData / $limit);
 
 // AMBIL DATA
-$sql = "SELECT t.kode_pesanan, td.nama_buku, td.qty, t.bukti_tf, t.metode_pembayaran,
-               td.subtotal_modal AS total_modal, td.subtotal_penjualan AS total_penjualan,
-               (td.subtotal_penjualan - td.subtotal_modal) AS total_keuntungan
-        FROM orders t
-        JOIN order_details td ON t.id_order = td.id_order
-        $filter
-        LIMIT $start, $limit";
+$sql = "
+SELECT 
+    t.kode_pesanan,
+    td.nama_buku,
+    td.qty,
+    t.bukti_tf,
+    t.metode_pembayaran,
+    td.subtotal_modal AS total_modal,
+    td.subtotal_penjualan AS total_penjualan,
+    (td.subtotal_penjualan - td.subtotal_modal) AS total_keuntungan
+FROM orders t
+JOIN order_details td ON t.id_order = td.id_order
+JOIN produk p ON p.id_produk = td.id_produk
+$filter
+LIMIT $start, $limit
+";
 $data = mysqli_query($conn, $sql);
 ?>
 
