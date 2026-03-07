@@ -134,8 +134,22 @@ if (isset($_GET['edit'])) {
     $icon_lama = $row['icon'];
 }
 
+// ================= SEARCH =================
+$keyword = isset($_GET['search']) ? mysqli_real_escape_string($conn, $_GET['search']) : '';
+
 // ================= AMBIL DATA =================
-$kategori = mysqli_query($conn, "SELECT * FROM kategori ORDER BY id_kategori DESC");
+if (!empty($keyword)) {
+    $kategori = mysqli_query($conn, "
+        SELECT * FROM kategori 
+        WHERE nama_kategori LIKE '%$keyword%'
+        ORDER BY id_kategori DESC
+    ");
+} else {
+    $kategori = mysqli_query($conn, "
+        SELECT * FROM kategori 
+        ORDER BY id_kategori DESC
+    ");
+}
 ?>
 
 <!DOCTYPE html>
@@ -147,207 +161,7 @@ $kategori = mysqli_query($conn, "SELECT * FROM kategori ORDER BY id_kategori DES
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * {
-            font-family: 'Inter', sans-serif;
-        }
-        body {
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-            min-height: 100vh;
-            overflow: hidden; /* Mencegah scroll global */
-        }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.08);
-        }
-        .gradient-primary {
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-        }
-        .gradient-accent {
-            background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);
-        }
-        .gradient-success {
-            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-        }
-        .hover-lift {
-            transition: all 0.3s ease;
-        }
-        .hover-lift:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
-        }
-        .sidebar-link {
-            position: relative;
-            overflow: hidden;
-        }
-        .sidebar-link::after {
-            content: '';
-            position: absolute;
-            left: 0;
-            bottom: 0;
-            width: 0;
-            height: 2px;
-            background: linear-gradient(90deg, #4f46e5, #7c3aed);
-            transition: width 0.3s ease;
-        }
-        .sidebar-link:hover::after {
-            width: 100%;
-        }
-        .active-link {
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-            color: white;
-            transition: all 0.3s ease;
-        }
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(79, 70, 229, 0.3);
-        }
-        .table-row-hover:hover {
-            background-color: #f8fafc;
-        }
-        .file-upload {
-            position: relative;
-            overflow: hidden;
-            cursor: pointer;
-        }
-        .file-upload input[type="file"] {
-            position: absolute;
-            top: 0;
-            right: 0;
-            min-width: 100%;
-            min-height: 100%;
-            font-size: 100px;
-            text-align: right;
-            filter: alpha(opacity=0);
-            opacity: 0;
-            outline: none;
-            background: white;
-            cursor: pointer;
-            display: block;
-        }
-        .category-icon {
-            width: 48px;
-            height: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 12px;
-            font-size: 20px;
-            color: white;
-            margin: 0 auto;
-        }
-        .no-icon {
-            background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
-        }
-        .icon-preview {
-            width: 64px;
-            height: 64px;
-            border-radius: 16px;
-            object-fit: cover;
-            border: 3px solid white;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        
-        /* SIDEBAR FIXED - TIDAK IKUT SCROLL */
-        .sidebar-container {
-            height: 100vh;
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 16rem; /* 64 * 0.25rem = 16rem */
-            z-index: 40;
-            overflow-y: auto; /* Scroll hanya di sidebar jika kontennya panjang */
-            overflow-x: hidden;
-        }
-        
-        /* MAIN CONTENT SCROLLABLE */
-        .main-content {
-            margin-left: 16rem; /* Sama dengan lebar sidebar */
-            height: 100vh;
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding: 1.5rem; /* p-6 */
-        }
-        
-        /* Custom scrollbar untuk main content */
-        .main-content::-webkit-scrollbar {
-            width: 8px;
-        }
-        .main-content::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 4px;
-        }
-        .main-content::-webkit-scrollbar-thumb {
-            background: #c7d2fe;
-            border-radius: 4px;
-        }
-        .main-content::-webkit-scrollbar-thumb:hover {
-            background: #a5b4fc;
-        }
-        
-        /* Custom scrollbar untuk sidebar */
-        .sidebar-container::-webkit-scrollbar {
-            width: 4px;
-        }
-        .sidebar-container::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .sidebar-container::-webkit-scrollbar-thumb {
-            background: #c7d2fe;
-            border-radius: 4px;
-        }
-        .sidebar-container::-webkit-scrollbar-thumb:hover {
-            background: #a5b4fc;
-        }
-        
-        /* Responsive untuk mobile */
-        @media (max-width: 768px) {
-            .sidebar-container {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-                width: 100%;
-                max-width: 280px;
-            }
-            .sidebar-container.mobile-open {
-                transform: translateX(0);
-            }
-            .main-content {
-                margin-left: 0;
-                padding: 1rem;
-            }
-            .mobile-menu-btn {
-                display: block;
-            }
-            .overlay {
-                display: none;
-                position: fixed;
-                inset: 0;
-                background: rgba(0, 0, 0, 0.5);
-                z-index: 30;
-            }
-            .overlay.active {
-                display: block;
-            }
-        }
-        
-        /* Desktop - tetap tampil normal */
-        @media (min-width: 769px) {
-            .mobile-menu-btn {
-                display: none;
-            }
-            .overlay {
-                display: none !important;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="../style/kategori.css">
 </head>
 <body class="min-h-screen overflow-hidden">
 
@@ -411,10 +225,36 @@ $kategori = mysqli_query($conn, "SELECT * FROM kategori ORDER BY id_kategori DES
             <h2 class="text-2xl lg:text-3xl font-bold text-gray-800 mb-2"><?= $edit ? 'Edit Kategori' : 'Kelola Kategori' ?></h2>
             <p class="text-gray-600"><?= $edit ? 'Perbarui informasi kategori' : 'Tambah dan kelola kategori produk' ?></p>
         </div>
-        <div class="mt-4 md:mt-0 text-sm text-gray-500 bg-white px-4 py-2 rounded-full shadow-sm">
-            <i class="fas fa-layer-group mr-2"></i>
-            <span>Total Kategori: <?= mysqli_num_rows($kategori) ?></span>
-        </div>
+        <div class="mt-4 md:mt-0 flex items-center gap-3">
+
+    <!-- SEARCH -->
+    <form method="GET" class="flex items-center bg-white border border-gray-300 rounded-xl overflow-hidden">
+        <input type="text"
+               name="search"
+               placeholder="Cari kategori..."
+               value="<?= htmlspecialchars($keyword ?? '') ?>"
+               class="px-4 py-2 outline-none w-48">
+
+        <button type="submit"
+                class="px-4 py-2 bg-indigo-500 text-white hover:bg-indigo-600">
+            <i class="fas fa-search"></i>
+        </button>
+    </form>
+
+    <!-- REFRESH -->
+    <button onclick="window.location.href='kategori.php'"
+            class="px-4 py-2 bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+        <i class="fas fa-rotate"></i>
+        Refresh
+    </button>
+
+    <!-- TOTAL -->
+    <div class="text-sm text-gray-500 bg-white px-4 py-2 rounded-full shadow-sm">
+        <i class="fas fa-layer-group mr-2"></i>
+        <span>Total Kategori: <?= mysqli_num_rows($kategori) ?></span>
+    </div>
+
+</div>
     </div>
 
     <!-- FORM CARD -->

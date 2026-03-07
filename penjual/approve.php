@@ -71,18 +71,54 @@ if (isset($_POST['approve'])) {
 ====================== */
 if (isset($_POST['tolak'])) {
 
-    $id_detail = $_POST['id_detail'];
+    $id_detail = (int)$_POST['id_detail'];
+    $alasan = $_POST['alasan'];
+$alasan_text = $_POST['alasan_text'] ?? '';
 
-    // update HANYA detail penjual ini
-    mysqli_query($conn, "
-        UPDATE order_details od
+if($alasan == "Lainnya"){
+    $alasan_tolak = mysqli_real_escape_string($conn, $alasan_text);
+}else{
+    $alasan_tolak = mysqli_real_escape_string($conn, $alasan);
+}
+
+    // ambil id_produk, qty dan status sebelumnya
+    $ambil = mysqli_query($conn,"
+        SELECT od.id_produk, od.qty, od.status_detail
+        FROM order_details od
         JOIN produk p ON p.id_produk = od.id_produk
-        SET 
-            od.status_detail='tolak',
-            od.refund_at=NOW()
         WHERE od.id_detail='$id_detail'
         AND p.id_penjual='$id_penjual'
     ");
+
+    $data = mysqli_fetch_assoc($ambil);
+
+    if($data){
+
+        $id_produk = $data['id_produk'];
+        $qty = $data['qty'];
+        $status_sebelumnya = $data['status_detail'];
+
+        // kembalikan stok hanya jika sebelumnya belum ditolak
+        if($status_sebelumnya != 'tolak'){
+            mysqli_query($conn,"
+                UPDATE produk
+                SET stok = stok + $qty
+                WHERE id_produk='$id_produk'
+            ");
+        }
+
+        // update HANYA detail penjual ini
+        mysqli_query($conn, "
+            UPDATE order_details od
+            JOIN produk p ON p.id_produk = od.id_produk
+            SET 
+                od.status_detail='tolak',
+                od.alasan_tolak='$alasan_tolak',
+                od.refund_at=NOW()
+            WHERE od.id_detail='$id_detail'
+            AND p.id_penjual='$id_penjual'
+        ");
+    }
 
     // ambil id_order
     $q = mysqli_query($conn, "
@@ -103,14 +139,14 @@ if (isset($_POST['tolak'])) {
     $r = mysqli_fetch_assoc($cek);
 
     if ($r['tolak'] == $r['total']) {
-        // semua tolak → refund total
+        // semua produk ditolak
         mysqli_query($conn, "
             UPDATE orders 
             SET status='refund', refund_at=NOW()
             WHERE id_order='$id_order'
         ");
     } else {
-        // sebagian tolak → parsial
+        // sebagian ditolak
         mysqli_query($conn, "
             UPDATE orders 
             SET status='parsial'
@@ -495,69 +531,66 @@ $q = mysqli_query($conn, "
                     </form>
 
                     <!-- TOLAK -->
-                    <form method="post" action="approve.php">
+                    <button onclick="bukaModalTolak(<?= $o['id_detail'] ?>)"
+                      class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 flex items-center gap-1">
+                      <i class="fas fa-times text-xs"></i> Tolak
+                    </button>
+                  <?php } ?>
+
+                  <?php
+                  // cek apakah ada minimal 1 item approved di order ini
+                  $cekApprove = mysqli_query($conn, "
+                      SELECT COUNT(*) AS total
+                      FROM order_details
+                      WHERE id_order='{$o['id_order']}'
+                      AND status_detail='approved'
+                  ");
+                  $ap = mysqli_fetch_assoc($cekApprove);
+                  ?>
+
+                  <?php if ($o['status_detail'] == 'approved' && empty($o['no_resi'])) { ?>
+                    <!-- INPUT RESI DENGAN DROPDOWN EKSPEDISI -->
+                    <form method="post" action="approve.php" class="flex flex-col gap-2 min-w-[250px] border border-gray-200 p-3 rounded-lg bg-gray-50">
                       <input type="hidden" name="id_detail" value="<?= $o['id_detail'] ?>">
-                      <button type="submit" name="tolak"
-                        class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 flex items-center gap-1">
-                        <i class="fas fa-times text-xs"></i> Tolak
+                      
+                      <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Pilih Ekspedisi</label>
+                        <select name="ekspedisi" required
+                          class="w-full border border-gray-300 px-3 py-1.5 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 bg-white">
+                          <option value="">-- Pilih Ekspedisi --</option>
+                          <option value="jne">JNE</option>
+                          <option value="jnt">J&T Express</option>
+                          <option value="sicepat">SiCepat</option>
+                          <option value="pos">Pos Indonesia</option>
+                          <option value="tiki">TIKI</option>
+                          <option value="wahana">Wahana</option>
+                          <option value="ninja">Ninja Express</option>
+                          <option value="anteraja">AnterAja</option>
+                          <option value="idexpress">ID Express</option>
+                        </select>
+                      </div>
+                      
+                      <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">No. Resi</label>
+                        <input type="text" name="no_resi" placeholder="Masukkan No. Resi"
+                          class="w-full border border-gray-300 px-3 py-1.5 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                          required>
+                      </div>
+                      
+                      <button type="submit" name="resi"
+                        class="mt-1 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 flex items-center justify-center gap-1">
+                        <i class="fas fa-save text-xs"></i> Simpan Resi
                       </button>
                     </form>
                   <?php } ?>
 
-                  <?php
-// cek apakah ada minimal 1 item approved di order ini
-$cekApprove = mysqli_query($conn, "
-    SELECT COUNT(*) AS total
-    FROM order_details
-    WHERE id_order='{$o['id_order']}'
-    AND status_detail='approved'
-");
-$ap = mysqli_fetch_assoc($cekApprove);
-?>
-
-<?php if ($o['status_detail'] == 'approved' && empty($o['no_resi'])) { ?>
-  <!-- INPUT RESI DENGAN DROPDOWN EKSPEDISI -->
-  <form method="post" action="approve.php" class="flex flex-col gap-2 min-w-[250px] border border-gray-200 p-3 rounded-lg bg-gray-50">
-    <input type="hidden" name="id_detail" value="<?= $o['id_detail'] ?>">
-    
-    <div>
-      <label class="block text-xs font-medium text-gray-700 mb-1">Pilih Ekspedisi</label>
-      <select name="ekspedisi" required
-        class="w-full border border-gray-300 px-3 py-1.5 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 bg-white">
-        <option value="">-- Pilih Ekspedisi --</option>
-        <option value="jne">JNE</option>
-        <option value="jnt">J&T Express</option>
-        <option value="sicepat">SiCepat</option>
-        <option value="pos">Pos Indonesia</option>
-        <option value="tiki">TIKI</option>
-        <option value="wahana">Wahana</option>
-        <option value="ninja">Ninja Express</option>
-        <option value="anteraja">AnterAja</option>
-        <option value="idexpress">ID Express</option>
-      </select>
-    </div>
-    
-    <div>
-      <label class="block text-xs font-medium text-gray-700 mb-1">No. Resi</label>
-      <input type="text" name="no_resi" placeholder="Masukkan No. Resi"
-        class="w-full border border-gray-300 px-3 py-1.5 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
-        required>
-    </div>
-    
-    <button type="submit" name="resi"
-      class="mt-1 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 flex items-center justify-center gap-1">
-      <i class="fas fa-save text-xs"></i> Simpan Resi
-    </button>
-  </form>
-<?php } ?>
-
                   <?php 
-if (
-    in_array($o['status_detail'], ['tolak','refund']) &&
-    !empty($o['refund_at']) &&
-    strtotime($o['refund_at']) <= time() - 60
-) { 
-?>
+                        if (
+                            in_array($o['status_detail'], ['tolak','refund']) &&
+                            !empty($o['refund_at']) &&
+                            strtotime($o['refund_at']) <= time() - 60
+                        ) { 
+                        ?>
                     <a href="approve.php?delete=<?= $o['id_detail'] ?>&page=<?= $page ?>"
                        onclick="return confirm('Yakin hapus pesanan ini?')"
                        class="px-3 py-1.5 bg-gray-700 text-white rounded-lg text-sm hover:bg-gray-800 flex items-center gap-1">
@@ -639,5 +672,103 @@ if (
     </div>
   </main>
 </div>
+
+<!-- MODAL TOLAK -->
+<!-- MODAL TOLAK -->
+<div id="modalTolak" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50">
+
+  <div class="bg-white rounded-xl p-6 w-[400px] shadow-lg">
+
+    <h2 class="text-lg font-semibold mb-4">Alasan Penolakan</h2>
+
+    <form method="post" action="approve.php">
+
+      <input type="hidden" name="id_detail" id="id_detail_tolak">
+
+      <!-- DROPDOWN -->
+      <label class="text-sm text-gray-600">Pilih Alasan</label>
+      <select name="alasan" id="alasanSelect"
+        class="w-full border rounded-lg px-3 py-2 mt-1 mb-3" required>
+
+        <option value="">-- Pilih Alasan --</option>
+        <option value="Uang transfer kurang">Uang transfer kurang</option>
+        <option value="Bukti transfer palsu">Bukti transfer palsu</option>
+        <option value="Nominal tidak sesuai">Nominal tidak sesuai</option>
+        <option value="Lainnya">Lainnya</option>
+
+      </select>
+
+      <!-- TEXT TAMBAHAN -->
+      <textarea
+        name="alasan_text"
+        id="alasanText"
+        placeholder="Tulis alasan lainnya..."
+        class="w-full border rounded-lg px-3 py-2 mb-4 hidden"></textarea>
+
+      <div class="flex justify-end gap-2">
+
+        <button type="button"
+          onclick="closeModal()"
+          class="px-4 py-2 bg-gray-300 rounded-lg">
+          Batal
+        </button>
+
+        <button type="submit"
+          name="tolak"
+          class="px-4 py-2 bg-red-600 text-white rounded-lg">
+          Tolak Pesanan
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+</div>
+
+
+<script>
+
+function bukaModalTolak(id_detail) {
+
+  const modal = document.getElementById("modalTolak");
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+
+  document.getElementById("id_detail_tolak").value = id_detail;
+
+}
+
+function closeModal() {
+
+  const modal = document.getElementById("modalTolak");
+  modal.classList.remove("flex");
+  modal.classList.add("hidden");
+
+}
+
+
+// tunggu halaman selesai load
+document.addEventListener("DOMContentLoaded", function(){
+
+  const select = document.getElementById("alasanSelect");
+  const text = document.getElementById("alasanText");
+
+  select.addEventListener("change", function(){
+
+    if(this.value === "Lainnya"){
+      text.classList.remove("hidden");
+      text.required = true;
+    }else{
+      text.classList.add("hidden");
+      text.required = false;
+    }
+
+  });
+
+});
+
+</script>
+
 </body>
 </html>

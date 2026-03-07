@@ -61,13 +61,27 @@ if (isset($_GET['hapus'])) {
 }
 
 // =====================
+// SEARCH PENJUAL
+// =====================
+$keyword = isset($_GET['search']) ? mysqli_real_escape_string($conn, $_GET['search']) : '';
+
+// =====================
 // AMBIL DATA PENJUAL
 // =====================
-$penjual = mysqli_query($conn, "
-    SELECT * FROM users 
-    WHERE role='penjual' 
-    ORDER BY id_user DESC
-");
+if (!empty($keyword)) {
+    $penjual = mysqli_query($conn, "
+        SELECT * FROM users 
+        WHERE role='penjual'
+        AND (nama LIKE '%$keyword%' OR email LIKE '%$keyword%')
+        ORDER BY id_user DESC
+    ");
+} else {
+    $penjual = mysqli_query($conn, "
+        SELECT * FROM users 
+        WHERE role='penjual'
+        ORDER BY id_user DESC
+    ");
+}
 
 // =====================
 // FUNGSI STATUS ONLINE / OFFLINE
@@ -220,16 +234,40 @@ function getStatus($last_activity) {
                 <p class="text-gray-600">Kelola dan pantau semua akun penjual di platform</p>
             </div>
             <div class="mt-4 md:mt-0 flex items-center gap-3">
-                <a href="register.php"
-                class="px-4 py-2 bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
-                <i class="fas fa-plus"></i>
-                Tambah Penjual
-                </a>
-                <button class="px-4 py-2 bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
-                    <i class="fas fa-download"></i>
-                    Export Data
-                </button>
-            </div>
+
+    <!-- SEARCH -->
+    <form method="GET" class="flex items-center bg-white border border-gray-300 rounded-xl overflow-hidden">
+        <input type="text" 
+               name="search" 
+               placeholder="Cari nama atau email..."
+               value="<?= htmlspecialchars($keyword ?? '') ?>"
+               class="px-4 py-2 outline-none w-56">
+
+        <button type="submit" 
+                class="px-4 py-2 bg-indigo-500 text-white hover:bg-indigo-600">
+            <i class="fas fa-search"></i>
+        </button>
+    </form>
+
+    <!-- REFRESH -->
+    <button onclick="window.location.href='penjual.php'" 
+            class="px-4 py-2 bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+        <i class="fas fa-rotate"></i>
+        Refresh
+    </button>
+
+    <a href="register.php"
+       class="px-4 py-2 bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+        <i class="fas fa-plus"></i>
+        Tambah Penjual
+    </a>
+
+    <button class="px-4 py-2 bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+        <i class="fas fa-download"></i>
+        Export Data
+    </button>
+
+</div>
         </div>
 
                 <?php if (isset($_SESSION['error'])): ?>

@@ -209,14 +209,32 @@ function getStatus($last_activity, $status) {
 
         <!-- SEARCH BAR -->
         <div class="mb-6">
-            <div class="relative max-w-md">
-                <input type="text" 
-                       id="searchInput" 
-                       placeholder="Cari penjual berdasarkan nama atau email..." 
-                       class="w-full px-4 py-3 pl-12 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-            </div>
+    <div class="flex gap-2 max-w-lg">
+        
+        <div class="relative flex-1">
+            <input type="text" 
+                   id="searchInput" 
+                   placeholder="Cari penjual berdasarkan nama atau email..." 
+                   class="w-full px-4 py-3 pl-12 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
         </div>
+
+        <!-- BUTTON SEARCH -->
+        <button onclick="searchPenjual()" 
+                class="px-5 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition flex items-center gap-2">
+            <i class="fas fa-search"></i>
+            Search
+        </button>
+
+        <!-- BUTTON REFRESH -->
+        <button onclick="refreshPenjual()" 
+                class="px-5 py-3 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition flex items-center gap-2">
+            <i class="fas fa-rotate"></i>
+            Refresh
+        </button>
+
+    </div>
+</div>
 
         <!-- PENJUAL CARDS -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="penjualContainer">
@@ -362,21 +380,34 @@ function getStatus($last_activity, $status) {
 
 <script>
     // Filter penjual berdasarkan pencarian
-    document.getElementById('searchInput').addEventListener('input', function(e) {
-        const searchTerm = e.target.value.toLowerCase();
-        const cards = document.querySelectorAll('#penjualContainer > div');
-        
-        cards.forEach(card => {
-            const name = card.getAttribute('data-name');
-            const email = card.getAttribute('data-email');
-            
-            if (name.includes(searchTerm) || email.includes(searchTerm)) {
-                card.style.display = 'block';
-            } else {
-                card.style.display = 'none';
-            }
-        });
+    function searchPenjual() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const cards = document.querySelectorAll('#penjualContainer > div');
+
+    cards.forEach(card => {
+        const name = card.getAttribute('data-name');
+        const email = card.getAttribute('data-email');
+
+        if (name.includes(searchTerm) || email.includes(searchTerm)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
     });
+}
+
+function refreshPenjual() {
+
+    // kosongkan search
+    document.getElementById('searchInput').value = '';
+
+    // tampilkan semua card
+    const cards = document.querySelectorAll('#penjualContainer > div');
+
+    cards.forEach(card => {
+        card.style.display = 'block';
+    });
+}
     
     // Tampilkan hanya yang online
     function showOnlineOnly() {

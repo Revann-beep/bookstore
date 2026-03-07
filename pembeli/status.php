@@ -35,29 +35,57 @@ if ($userResult && mysqli_num_rows($userResult) > 0) {
     ];
 }
 
+
+/* =======================
+   PAGINATION
+======================= */
+$limit = 7;
+
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+
+if ($page < 1) {
+  $page = 1;
+}
+
+$start = ($page - 1) * $limit;
+
+/* TOTAL DATA */
+$total_query = mysqli_query($conn,"
+SELECT COUNT(*) as total
+FROM orders o
+JOIN order_details od ON o.id_order = od.id_order
+WHERE o.id_pembeli = '$id_user'
+");
+
+$total_data = mysqli_fetch_assoc($total_query)['total'];
+
+$total_pages = ceil($total_data / $limit);
+
 /* =======================
    DATA ORDER (HANYA MILIK PEMBELI LOGIN)
 ======================= */
 $q = mysqli_query($conn, "
-    SELECT 
-        o.id_order,
-        o.bukti_tf,
-        o.metode_pembayaran,
-        o.alamat_pembeli,
+SELECT 
+o.id_order,
+o.bukti_tf,
+o.metode_pembayaran,
+o.alamat_pembeli,
 
-        od.id_detail,
-        od.qty,
-        od.status_detail,
-        od.no_resi,
-        od.link_lacak,
-        od.ekspedisi,
+od.id_detail,
+od.qty,
+od.status_detail,
+od.no_resi,
+od.link_lacak,
+od.ekspedisi,
+od.alasan_tolak,
 
-        p.nama_buku
-    FROM orders o
-    JOIN order_details od ON o.id_order = od.id_order
-    JOIN produk p ON od.id_produk = p.id_produk
-    WHERE o.id_pembeli = '$id_user'
-    ORDER BY o.created_at DESC, od.id_detail ASC
+p.nama_buku
+FROM orders o
+JOIN order_details od ON o.id_order = od.id_order
+JOIN produk p ON od.id_produk = p.id_produk
+WHERE o.id_pembeli = '$id_user'
+ORDER BY o.created_at DESC, od.id_detail ASC
+LIMIT $start, $limit
 ");
 
 /* CEK QUERY */
@@ -324,71 +352,97 @@ $total_orders = mysqli_num_rows($q);
             </td>
             
             <td class="py-4 px-6">
-<?php 
-$statusColors = [
-  'pending' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  'menunggu_verifikasi' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  'approved' => 'bg-green-100 text-green-800 border-green-200',
-  'paid' => 'bg-green-100 text-green-800 border-green-200',
-  'dikirim' => 'bg-blue-100 text-blue-800 border-blue-200',
-  'tolak' => 'bg-red-100 text-red-800 border-red-200',
-  'refund' => 'bg-purple-100 text-purple-800 border-purple-200'
-];
+              <?php 
+              $statusColors = [
+                'pending' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                'menunggu_verifikasi' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                'approved' => 'bg-green-100 text-green-800 border-green-200',
+                'paid' => 'bg-green-100 text-green-800 border-green-200',
+                'dikirim' => 'bg-blue-100 text-blue-800 border-blue-200',
+                'tolak' => 'bg-red-100 text-red-800 border-red-200',
+                'refund' => 'bg-purple-100 text-purple-800 border-purple-200',
+                'selesai' => 'bg-emerald-100 text-emerald-800 border-emerald-200'
+              ];
 
-$status = $d['status_detail'] ?? 'pending';
-$color  = $statusColors[$status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
-?>
+              $status = $d['status_detail'] ?? 'pending';
+              $color  = $statusColors[$status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
+              ?>
 
-<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium border <?= $color ?>">
-  <?php if ($status === 'pending'): ?>
-    <div class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
-  <?php elseif ($status === 'menunggu_verifikasi'): ?>
-    <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
-  <?php elseif ($status === 'approved' || $status === 'paid'): ?>
-    <div class="w-2 h-2 rounded-full bg-green-500"></div>
-  <?php elseif ($status === 'dikirim'): ?>
-    <div class="w-2 h-2 rounded-full bg-blue-500"></div>
-  <?php elseif ($status === 'tolak'): ?>
-    <div class="w-2 h-2 rounded-full bg-red-500"></div>
-  <?php elseif ($status === 'refund'): ?>
-    <div class="w-2 h-2 rounded-full bg-purple-500"></div>
-  <?php else: ?>
-    <div class="w-2 h-2 rounded-full bg-gray-500"></div>
-  <?php endif; ?>
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium border <?= $color ?>">
+                <?php if ($status === 'pending'): ?>
+                  <div class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
+                <?php elseif ($status === 'menunggu_verifikasi'): ?>
+                  <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+                <?php elseif ($status === 'approved' || $status === 'paid'): ?>
+                  <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                <?php elseif ($status === 'dikirim'): ?>
+                  <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                <?php elseif ($status === 'tolak'): ?>
+                  <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                <?php elseif ($status === 'refund'): ?>
+                  <div class="w-2 h-2 rounded-full bg-purple-500"></div>
+                <?php elseif ($status === 'selesai'): ?>
+                  <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                <?php else: ?>
+                  <div class="w-2 h-2 rounded-full bg-gray-500"></div>
+                <?php endif; ?>
 
-  <?= ucfirst(str_replace('_',' ', $status)) ?>
-</div>
+                <?= ucfirst(str_replace('_',' ', $status)) ?>
+              </div>
 
-<div class="text-xs text-slate-500 mt-1">
-  <?php
-    if ($status === 'approved' || $status === 'paid') {
-        echo 'Disetujui';
-    } elseif ($status === 'tolak') {
-        echo 'Ditolak';
-    } elseif ($status === 'refund') {
-        echo 'Dikembalikan';
-    } else {
-        echo 'Menunggu';
-    }
-  ?>
-</div>
-</td>
-            
-            <!-- ACTION -->
-                        <td class="py-4 px-6">
-              <div class="flex gap-2">
+              <div class="text-xs text-slate-500 mt-1">
+              <?php
+                if ($status === 'approved' || $status === 'paid') {
+                    echo 'Disetujui';
+                } elseif ($status === 'tolak') {
+                    echo 'Ditolak oleh penjual';
+                } elseif ($status === 'refund') {
+                    echo 'Dana dikembalikan';
+                } else {
+                    echo 'Menunggu proses';
+                }
+              ?>
+              </div>
 
-                <!-- LACAK (hanya jika dikirim & ada resi) -->
-                <?php if (
-    ($d['status_detail'] ?? '') === 'dikirim'
-    && !empty($d['no_resi'])
-    && !empty($d['link_lacak'])
-): ?>
-  <a href="<?= htmlspecialchars($d['link_lacak']) ?>"
-     target="_blank"
-     class="flex items-center gap-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition shadow">
-    🚚 Lacak Paket
-  </a>
+              <!-- TAMBAHAN ALASAN PENOLAKAN -->
+              <?php if ($status === 'tolak' && !empty($d['alasan_tolak'])): ?>
+                  <div class="mt-2 p-3 bg-red-50 border border-red-300 rounded text-sm text-red-700">
+                  <strong>Pesanan Ditolak</strong><br>
+                  Alasan: <?= htmlspecialchars($d['alasan_tolak']) ?>
+                  </div>
+              <?php endif; ?>
+
+            </td>
+                          
+                          <!-- ACTION -->
+                                      <td class="py-4 px-6">
+                            <div class="flex gap-2">
+
+                              <!-- LACAK (hanya jika dikirim & ada resi) -->
+                              <?php if (
+                  ($d['status_detail'] ?? '') === 'dikirim'
+                  && !empty($d['no_resi'])
+                  && !empty($d['link_lacak'])
+              ): ?>
+                <a href="<?= htmlspecialchars($d['link_lacak']) ?>"
+                  target="_blank"
+                  class="flex items-center gap-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition shadow">
+                  🚚 Lacak Paket
+                </a>
+              <?php endif; ?>
+
+              <?php if (($d['status_detail'] ?? '') === 'dikirim'): ?>
+<form method="POST" action="../auth/selesai.php">
+<input type="hidden" name="id_detail" value="<?= $d['id_detail'] ?>">
+
+<button 
+onclick="return confirm('Apakah pesanan sudah diterima?')"
+class="flex items-center gap-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition shadow">
+
+✅ Pesanan Selesai
+
+</button>
+</form>
 <?php endif; ?>
 
                 <!-- INVOICE -->
@@ -397,16 +451,6 @@ $color  = $statusColors[$status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
                   <i class="fas fa-file-invoice text-sm"></i>
                   Invoice
                 </a>
-
-                <!-- UPLOAD BUKTI -->
-                <!-- <?php if (($d['status_detail'] ?? '') === 'pending' && empty($d['bukti_tf'])): ?>
-                  <a href="../auth/upload-bukti.php?id_order=<?= (int)$d['id_order'] ?>"
-                    class="flex items-center gap-1 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-medium transition shadow">
-                    <i class="fas fa-upload text-sm"></i>
-                    Upload
-                  </a>
-                <?php endif; ?> -->
-
               </div>
             </td>
           </tr>
@@ -416,6 +460,35 @@ $color  = $statusColors[$status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
       </table>
     </div>
   </div>
+
+  <!-- PAGINATION -->
+<div class="flex justify-center mt-6 gap-2">
+
+<?php if ($page > 1): ?>
+<a href="?page=<?= $page-1 ?>"
+class="px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg">
+← Prev
+</a>
+<?php endif; ?>
+
+<?php for ($i = 1; $i <= $total_pages; $i++): ?>
+
+<a href="?page=<?= $i ?>"
+class="px-4 py-2 rounded-lg 
+<?= ($i == $page) ? 'bg-amber-600 text-white' : 'bg-slate-200 hover:bg-slate-300' ?>">
+<?= $i ?>
+</a>
+
+<?php endfor; ?>
+
+<?php if ($page < $total_pages): ?>
+<a href="?page=<?= $page+1 ?>"
+class="px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg">
+Next →
+</a>
+<?php endif; ?>
+
+</div>
 
   <!-- FOOTER -->
   <footer class="text-center text-slate-500 mt-12 pb-4">

@@ -10,23 +10,53 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'penjual') {
 
 $id_penjual = $_SESSION['id_user'];
 
-
-
-// SEARCH
+/* ======================
+   SEARCH & FILTER
+====================== */
 $search = $_GET['search'] ?? '';
+$kategori = $_GET['kategori'] ?? '';
 
-// AMBIL PRODUK MILIK SENDIRI
-$produk = mysqli_query($conn, "
+/* ======================
+   DATA KATEGORI + JUMLAH PRODUK
+====================== */
+$kategoriList = mysqli_query($conn, "
+    SELECT k.id_kategori, k.nama_kategori, COUNT(p.id_produk) AS jumlah
+    FROM kategori k
+    LEFT JOIN produk p 
+        ON k.id_kategori = p.id_kategori
+        AND p.id_penjual = '$id_penjual'
+    GROUP BY k.id_kategori
+    ORDER BY k.nama_kategori ASC
+");
+
+/* ======================
+   QUERY PRODUK
+====================== */
+$queryProduk = "
     SELECT p.*, k.nama_kategori
     FROM produk p
     LEFT JOIN kategori k ON p.id_kategori = k.id_kategori
     WHERE p.id_penjual = '$id_penjual'
-    AND p.nama_buku LIKE '%$search%'
-    ORDER BY p.id_produk DESC
-");
+";
 
-// HAPUS PRODUK (HANYA JIKA STOK = 0)
+if (!empty($search)) {
+    $queryProduk .= " AND p.nama_buku LIKE '%$search%'";
+}
+
+if (!empty($kategori)) {
+    $queryProduk .= " AND p.id_kategori = '$kategori'";
+}
+
+$queryProduk .= " ORDER BY p.id_produk DESC";
+
+$produk = mysqli_query($conn, $queryProduk);
+
+
+/* ======================
+   HAPUS PRODUK (STOK HARUS 0)
+====================== */
 if (isset($_GET['hapus'])) {
+
     $id = $_GET['hapus'];
 
     $cek = mysqli_query($conn, "
@@ -34,19 +64,26 @@ if (isset($_GET['hapus'])) {
         WHERE id_produk='$id'
         AND id_penjual='$id_penjual'
     ");
+
     $row = mysqli_fetch_assoc($cek);
 
     if ($row && $row['stok'] == 0) {
-        mysqli_query($conn, "DELETE FROM produk WHERE id_produk='$id'");
+
+        mysqli_query($conn, "
+            DELETE FROM produk 
+            WHERE id_produk='$id'
+        ");
+
         $_SESSION['success'] = "Produk berhasil dihapus!";
+
     } else {
+
         $_SESSION['error'] = "Produk tidak bisa dihapus karena stok masih ada!";
     }
 
     header("Location: produk.php");
     exit;
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -227,31 +264,51 @@ if (isset($_GET['hapus'])) {
     <div class="bg-white card-shadow rounded-xl p-5 mb-6">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div class="flex-1 relative">
-                <form method="GET">
-                    <div class="relative">
-                        <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                        <input type="text" name="search"
-                               value="<?= htmlspecialchars($search) ?>"
-                               placeholder="Cari produk berdasarkan nama buku..."
-                               class="search-input w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-indigo-400">
-                        <?php if($search): ?>
-                            <a href="produk.php" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500">
-                                <i class="fas fa-times"></i>
-                            </a>
-                        <?php endif; ?>
-                    </div>
-                </form>
+                <form method="GET" class="flex flex-col md:flex-row gap-3">
+
+    <!-- SEARCH -->
+    <div class="relative flex-1">
+        <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+
+        <input type="text"
+               name="search"
+               value="<?= htmlspecialchars($search) ?>"
+               placeholder="Cari produk berdasarkan nama buku..."
+               class="search-input w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl">
+    </div>
+
+    <!-- FILTER KATEGORI -->
+    <select name="kategori"
+            class="px-4 py-3 border border-gray-200 rounded-xl">
+
+        <option value="">Semua Kategori</option>
+
+        <?php while($kat = mysqli_fetch_assoc($kategoriList)): ?>
+            <option value="<?= $kat['id_kategori'] ?>"
+                <?= ($kategori == $kat['id_kategori']) ? 'selected' : '' ?>>
+                
+                <?= $kat['nama_kategori'] ?> (<?= $kat['jumlah'] ?> buku)
+
+            </option>
+        <?php endwhile; ?>
+
+    </select>
+
+    <!-- BUTTON SEARCH -->
+    <button type="submit"
+        class="px-5 py-3 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600">
+        <i class="fas fa-search"></i> Cari
+    </button>
+
+    <!-- REFRESH -->
+    <a href="produk.php"
+        class="px-5 py-3 border border-gray-200 rounded-xl hover:bg-gray-50">
+        <i class="fas fa-rotate"></i> Reset
+    </a>
+
+</form>
             </div>
-            <div class="flex items-center gap-2">
-                <button class="px-4 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 flex items-center gap-2">
-                    <i class="fas fa-filter"></i>
-                    Filter
-                </button>
-                <button class="px-4 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 flex items-center gap-2">
-                    <i class="fas fa-sort"></i>
-                    Urutkan
-                </button>
-            </div>
+            
         </div>
     </div>
 

@@ -6,15 +6,24 @@ require '../auth/connection.php';
 
 /* AMBIL DATA PRODUK + ID PENJUAL */
 $search = $_GET['search'] ?? '';
+$kategori = $_GET['kategori'] ?? '';
 
-$where = "";
+$where = [];
+$search_safe = mysqli_real_escape_string($conn, $search);
+$kategori_safe = mysqli_real_escape_string($conn, $kategori);
+
 if ($search !== '') {
-    $search_safe = mysqli_real_escape_string($conn, $search);
-    $where = "
-        WHERE 
-            p.nama_buku LIKE '%$search_safe%'
-            OR k.nama_kategori LIKE '%$search_safe%'
-    ";
+    $where[] = "(p.nama_buku LIKE '%$search_safe%' 
+                 OR k.nama_kategori LIKE '%$search_safe%')";
+}
+
+if ($kategori !== '') {
+    $where[] = "p.id_kategori = '$kategori_safe'";
+}
+
+$whereSQL = "";
+if (!empty($where)) {
+    $whereSQL = "WHERE " . implode(" AND ", $where);
 }
 
 $produkQ = mysqli_query($conn, "
@@ -28,7 +37,7 @@ $produkQ = mysqli_query($conn, "
         k.nama_kategori
     FROM produk p
     LEFT JOIN kategori k ON p.id_kategori = k.id_kategori
-    $where
+    $whereSQL
     ORDER BY p.created_at DESC
 ");
 
@@ -47,8 +56,11 @@ if ($id_user) {
     $user = mysqli_fetch_assoc($userQ);
 }
 
-// $search = $_GET['search'] ?? '';
-
+$kategoriQ = mysqli_query($conn, "
+    SELECT id_kategori, nama_kategori
+    FROM kategori
+    ORDER BY nama_kategori ASC
+");
 ?>
 
 <!DOCTYPE html>
@@ -171,37 +183,72 @@ if ($id_user) {
 <!-- SEARCH BAR -->
 <div class="mb-8">
   <form method="GET" action="" class="max-w-2xl mx-auto">
-    <div class="search-container">
+
+  <div class="flex gap-3">
+
+    <!-- SEARCH -->
+    <div class="search-container flex-1">
       <svg class="search-icon h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
       </svg>
-      <input type="text" 
-             name="search" 
-             value="<?= htmlspecialchars($search); ?>"
-             placeholder="Cari buku berdasarkan judul..." 
-             class="w-full pl-12 pr-6 py-4 bg-white border border-slate-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-slate-700 placeholder-slate-400 text-base">
+
+      <input type="text"
+        name="search"
+        value="<?= htmlspecialchars($search); ?>"
+        placeholder="Cari buku..."
+        class="w-full pl-12 pr-6 py-3 bg-white border border-slate-300 rounded-xl
+        focus:outline-none focus:ring-2 focus:ring-amber-500">
     </div>
-    
-    <!-- Filter dan Clear Button -->
-    <div class="flex gap-3 mt-3 justify-end">
-      <?php if ($search): ?>
-        <a href="halaman-pesanan.php" 
-           class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-all duration-300 flex items-center gap-2">
-          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-          Clear Search
-        </a>
-      <?php endif; ?>
-      <button type="submit" 
-              class="px-6 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all duration-300 shadow hover:shadow-lg flex items-center gap-2">
-        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-        Search
-      </button>
-    </div>
-  </form>
+
+    <!-- FILTER KATEGORI -->
+    <select name="kategori"
+      class="px-4 py-3 border border-slate-300 rounded-xl
+      focus:outline-none focus:ring-2 focus:ring-amber-500">
+
+      <option value="">Semua Kategori</option>
+
+      <?php while($k = mysqli_fetch_assoc($kategoriQ)) : ?>
+        <option value="<?= $k['id_kategori']; ?>"
+          <?= ($kategori == $k['id_kategori']) ? 'selected' : ''; ?>>
+          <?= $k['nama_kategori']; ?>
+        </option>
+      <?php endwhile; ?>
+
+    </select>
+
+  </div>
+
+  <!-- BUTTON -->
+  <div class="flex gap-3 mt-3 justify-end">
+
+    <!-- REFRESH / CLEAR -->
+    <a href="halaman-pesanan.php"
+      class="px-4 py-2 bg-slate-200 rounded-lg hover:bg-slate-300 flex items-center gap-2">
+
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M4 4v5h.582M20 20v-5h-.581M5.636 18.364A9 9 0 1118.364 5.636"/>
+      </svg>
+
+      Refresh
+    </a>
+
+    <!-- SEARCH -->
+    <button type="submit"
+      class="px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 flex items-center gap-2">
+
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+
+      Search
+    </button>
+
+  </div>
+
+</form>
 </div>
 
 <!-- RESULTS INFO -->
