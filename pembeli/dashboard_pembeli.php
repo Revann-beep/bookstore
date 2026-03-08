@@ -19,6 +19,22 @@ $userQuery = mysqli_query($conn, "
 ");
 $user = mysqli_fetch_assoc($userQuery);
 
+/* ======================
+   NOTIFIKASI CHAT
+====================== */
+
+$notifQuery = mysqli_query($conn, "
+SELECT messages.*, users.nama 
+FROM messages
+JOIN users ON users.id_user = messages.sender_id
+WHERE messages.receiver_id = '$id_user'
+AND messages.is_read = 0
+ORDER BY messages.created_at DESC
+LIMIT 5
+");
+
+$jumlahNotif = mysqli_num_rows($notifQuery);
+
 /* AMBIL DATA KATEGORI */
 $query = mysqli_query($conn, "SELECT * FROM kategori");
 ?>
@@ -111,28 +127,80 @@ $query = mysqli_query($conn, "SELECT * FROM kategori");
   <main class="flex-1 p-8">
 
     <!-- Topbar -->
-    <div class="flex justify-end mb-8">
-      <div class="flex items-center gap-3 bg-gradient-to-r from-slate-800 to-slate-900 px-5 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
-        
-        <div class="text-right">
-          <p class="font-semibold text-white">
-            <?= htmlspecialchars($user['nama']); ?>
-          </p>
-          <p class="text-sm text-slate-300">
-            <?= htmlspecialchars($user['email']); ?>
-          </p>
-        </div>
+    <div class="flex justify-end items-center gap-4 mb-8">
 
-        <div class="relative">
-          <img 
-            src="../img/profile/<?= !empty($user['image']) ? $user['image'] : 'default.png'; ?>" 
-            class="w-12 h-12 rounded-full object-cover border-2 border-amber-400"
-          />
-          <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-900"></div>
-        </div>
-        
-      </div>
-    </div>
+<!-- NOTIFIKASI -->
+<div class="relative">
+<button onclick="toggleNotif()" class="relative bg-white p-3 rounded-xl shadow hover:bg-gray-100 transition">
+
+<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14V11a6 6 0 10-12 0v3c0 .386-.146.735-.405 1.005L4 17h5m6 0a3 3 0 11-6 0m6 0H9"/>
+</svg>
+
+<?php if($jumlahNotif > 0): ?>
+<span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+<?= $jumlahNotif ?>
+</span>
+<?php endif; ?>
+
+</button>
+
+<div id="notifDropdown" class="hidden absolute right-0 mt-3 w-80 bg-white rounded-xl shadow-lg border z-50">
+
+<div class="p-3 border-b font-semibold">
+Notifikasi Chat
+</div>
+
+<?php if($jumlahNotif > 0): ?>
+<?php while($notif = mysqli_fetch_assoc($notifQuery)): ?>
+
+<a href="pesan.php?id_penjual=<?= $notif['sender_id'] ?>" 
+   class="block p-3 border-b hover:bg-gray-50 transition">
+
+  <p class="text-sm font-semibold text-gray-800">
+    <?= htmlspecialchars($notif['nama']) ?>
+  </p>
+
+  <p class="text-sm text-gray-600">
+    <?= htmlspecialchars($notif['message']) ?>
+  </p>
+
+  <p class="text-xs text-gray-400">
+    <?= $notif['created_at'] ?>
+  </p>
+
+</a>
+
+<?php endwhile; ?>
+<?php else: ?>
+
+<p class="p-4 text-center text-gray-500">
+Tidak ada pesan baru
+</p>
+
+<?php endif; ?>
+
+</div>
+</div>
+
+
+<!-- CARD USER -->
+<div class="flex items-center gap-3 bg-gradient-to-r from-slate-800 to-slate-900 px-5 py-3 rounded-xl shadow-lg">
+
+<div class="text-right">
+<p class="font-semibold text-white"><?= htmlspecialchars($user['nama']); ?></p>
+<p class="text-sm text-slate-300"><?= htmlspecialchars($user['email']); ?></p>
+</div>
+
+<img 
+src="../img/profile/<?= !empty($user['image']) ? $user['image'] : 'default.png'; ?>"
+class="w-12 h-12 rounded-full object-cover border-2 border-amber-400"
+/>
+
+</div>
+
+</div>
 
     <!-- Banner -->
     <div class="bg-gradient-to-r from-amber-600 to-amber-800 rounded-3xl p-10 text-white flex justify-between items-center mb-10 shadow-xl overflow-hidden relative">
@@ -200,6 +268,25 @@ $query = mysqli_query($conn, "SELECT * FROM kategori");
 
   </main>
 </div>
+
+<script>
+
+function toggleNotif(){
+  const dropdown = document.getElementById("notifDropdown");
+  dropdown.classList.toggle("hidden");
+}
+
+document.addEventListener("click", function(event){
+
+  const notif = document.getElementById("notifDropdown");
+
+  if(!event.target.closest(".relative")){
+    notif.classList.add("hidden");
+  }
+
+});
+
+</script>
 
 </body>
 </html>

@@ -7,91 +7,115 @@ if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'penjual') {
     exit;
 }
 
-
-
 $penjual_id   = $_SESSION['id_user'];
 $penjual_nama = $_SESSION['nama'];
 
-$chatWith  = (int)($_GET['user'] ?? 0);
-$id_produk = (int)($_GET['id_produk'] ?? 0);
+$chatWith  = isset($_GET['user']) ? intval($_GET['user']) : 0;
+$id_produk = isset($_GET['id_produk']) ? intval($_GET['id_produk']) : null;
 
 /* ================== KIRIM PESAN ================== */
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $chatWith > 0 && $id_produk > 0) {
-    $pesan = trim($_POST['pesan']);
-    if ($pesan !== '') {
-        mysqli_query($conn, "
-            INSERT INTO messages (sender_id, receiver_id, id_produk, message, is_read, created_at)
-            VALUES ('$penjual_id', '$chatWith', '$id_produk', '$pesan', 0, NOW())
-        ");
-    }
-    header("Location: chat.php?user=$chatWith&id_produk=$id_produk");
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $chatWith > 0) {
+
+    $pesan = mysqli_real_escape_string($conn, $_POST['pesan']);
+
+    mysqli_query($conn,"
+        INSERT INTO messages 
+        (sender_id, receiver_id, id_produk, message, is_read, created_at)
+        VALUES (
+            '$penjual_id',
+            '$chatWith',
+            ".($id_produk ? "'$id_produk'" : "NULL").",
+            '$pesan',
+            0,
+            NOW()
+        )
+    ");
+
+    header("Location: chat.php?user=$chatWith");
     exit;
 }
 
 /* ================== NAMA PEMBELI ================== */
 $pembeli_nama = '';
+
 if ($chatWith > 0) {
-    $q = mysqli_query ($conn, "SELECT nama FROM users WHERE id_user='$chatWith'");
-    if ($r = mysqli_fetch_assoc($q)) {
+
+    $q = mysqli_query($conn,"SELECT nama FROM users WHERE id_user='$chatWith'");
+
+    if($r = mysqli_fetch_assoc($q)){
         $pembeli_nama = $r['nama'];
     }
 }
 
 /* ================== MARK AS READ ================== */
-if ($chatWith && $id_produk) {
-    mysqli_query($conn, "
-        UPDATE messages 
+if ($chatWith > 0) {
+
+    mysqli_query($conn,"
+        UPDATE messages
         SET is_read=1
         WHERE sender_id='$chatWith'
         AND receiver_id='$penjual_id'
-        AND id_produk='$id_produk'
     ");
 }
 
 /* ================== CHAT HISTORY ================== */
-// $chat = [];
-// if ($chatWith && $id_produk) {
-//     $qChat = mysqli_query($conn, "
-//         SELECT * FROM messages
-//         WHERE id_produk='$id_produk'
-//         AND (
-//             (sender_id='$penjual_id' AND receiver_id='$chatWith')
-//             OR
-//             (sender_id='$chatWith' AND receiver_id='$penjual_id')
-//         )
-//         ORDER BY created_at ASC
-//     ");
-//     while ($row = mysqli_fetch_assoc($qChat)) {
-//         $chat[] = $row;
-//     }
-// }
 
-$inboxQuery = mysqli_query($conn, "
-    SELECT 
-        u.id_user,
-        u.nama,
-        m.id_produk,
-        m.message AS last_msg,
-        m.created_at,
-        (
-            SELECT COUNT(*) 
-            FROM messages 
-            WHERE receiver_id = '$penjual_id'
-              AND sender_id = u.id_user
-              AND is_read = 0
-        ) AS unread
-    FROM messages m
-    JOIN users u ON u.id_user = m.sender_id
-    WHERE m.receiver_id = '$penjual_id'
-    AND m.id_message IN (
-        SELECT MAX(id_message)
-        FROM messages
-        WHERE receiver_id = '$penjual_id'
-        GROUP BY sender_id, id_produk
-    )
-    ORDER BY m.created_at DESC
+$chat = [];
+
+if ($chatWith > 0) {
+
+$qChat = mysqli_query($conn,"
+SELECT m.*, u.nama
+FROM messages m
+JOIN users u ON u.id_user = m.sender_id
+WHERE 
+(
+    (m.sender_id='$penjual_id' AND m.receiver_id='$chatWith')
+    OR
+    (m.sender_id='$chatWith' AND m.receiver_id='$penjual_id')
+)
+ORDER BY m.created_at ASC
 ");
 
+while($row = mysqli_fetch_assoc($qChat)){
+$chat[] = $row;
+}
+
+}
+
+/* ================== INBOX ================== */
+
+$inboxQuery = mysqli_query($conn,"
+SELECT 
+u.id_user,
+u.nama,
+m.message as last_msg,
+MAX(m.created_at) as created_at,
+
+(
+SELECT COUNT(*)
+FROM messages
+WHERE receiver_id='$penjual_id'
+AND sender_id=u.id_user
+AND is_read=0
+) as unread
+
+FROM messages m
+
+JOIN users u 
+ON u.id_user =
+CASE
+WHEN m.sender_id='$penjual_id'
+THEN m.receiver_id
+ELSE m.sender_id
+END
+
+WHERE (m.sender_id='$penjual_id' OR m.receiver_id='$penjual_id')
+
+GROUP BY u.id_user
+
+ORDER BY created_at DESC
+");
 ?>
 
 
@@ -220,9 +244,11 @@ $inboxQuery = mysqli_query($conn, "
                             $last_msg = substr($last_msg, 0, 40) . '...';
                         }
                 ?>
-                    <a href="?user=<?= $row['id_user'] ?>&id_produk=<?= $row['id_produk'] ?>" 
-   class="flex items-center p-4 border-b hover:bg-gray-50 transition 
-   <?= ($chatWith == $row['id_user'] && $id_produk == $row['id_produk']) ? 'active-chat' : '' ?>">
+                    <?php $produk = $row['id_produk'] ?? 0; ?>
+
+<a href="?user=<?= $row['id_user'] ?>&id_produk=<?= $produk ?>" 
+class="flex items-center p-4 border-b hover:bg-gray-50 transition 
+<?= ($chatWith == $row['id_user'] && $id_produk == $produk) ? 'active-chat' : '' ?>">
 
                         <div class="relative flex-shrink-0">
                             <div class="w-12 h-12 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-full flex items-center justify-center">
@@ -342,12 +368,7 @@ $inboxQuery = mysqli_query($conn, "
       class="p-5 border-t bg-white shadow-sm">
 
                     <div class="flex gap-3">
-                        <button type="button" class="w-12 h-12 flex items-center justify-center text-gray-500 hover:text-indigo-600 hover:bg-gray-100 rounded-full">
-                            <i class="fas fa-paperclip text-xl"></i>
-                        </button>
-                        <button type="button" class="w-12 h-12 flex items-center justify-center text-gray-500 hover:text-indigo-600 hover:bg-gray-100 rounded-full">
-                            <i class="fas fa-image text-xl"></i>
-                        </button>
+                        
                         <input type="text" name="pesan" placeholder="Ketik pesan Anda..."
                                class="flex-1 border border-gray-300 rounded-full px-5 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                required autofocus>
