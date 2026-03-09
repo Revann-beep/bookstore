@@ -1,60 +1,105 @@
-<?php
-session_start();
-require '../auth/connection.php';
+<?php 
+session_start(); 
+require '../auth/connection.php'; 
 
 // CEGAH AKSES SELAIN PENJUAL
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'penjual') {
-    header("Location: ../index.php");
-    exit;
-}
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'penjual') { 
+    header("Location: ../index.php"); 
+    exit; 
+} 
 
-$id_penjual = $_SESSION['id_user'];
+$id_penjual = $_SESSION['id_user']; 
 
+// ================= AMBIL DATA PENJUAL =================
+$user = mysqli_query($conn, "SELECT * FROM users WHERE id_user='$id_penjual'"); 
+$user = mysqli_fetch_assoc($user); 
 
-
-// AMBIL DATA PENJUAL
-$user = mysqli_query($conn, "SELECT * FROM users WHERE id_user='$id_penjual'");
-$user = mysqli_fetch_assoc($user);
-
-// AMBIL NOTIFIKASI CHAT BARU
-$notifikasi_chat = mysqli_query($conn, "
+// ================= NOTIFIKASI CHAT =================
+$notifikasi_chat = mysqli_query($conn, " 
     SELECT COUNT(*) as total_unread 
     FROM messages 
     WHERE receiver_id = '$id_penjual' 
-    AND is_read = 0
-");
-$chat_notif = mysqli_fetch_assoc($notifikasi_chat);
-$total_unread = $chat_notif['total_unread'] ?? 0;
+    AND is_read = 0 
+"); 
 
-// AMBIL 3 PESAN TERBARU UNTUK DROPDOWN
-$recent_chats = mysqli_query($conn, "
-    SELECT m.*, u.nama as sender_nama
-    FROM messages m
-    JOIN users u ON u.id_user = m.sender_id
-    WHERE m.receiver_id = '$id_penjual'
-    ORDER BY m.created_at DESC
-    LIMIT 3
-");
+$chat_notif = mysqli_fetch_assoc($notifikasi_chat); 
+$total_unread = $chat_notif['total_unread'] ?? 0; 
 
-// ambil kategori
-$kategori = mysqli_query($conn, "SELECT * FROM kategori ORDER BY id_kategori DESC");
+// ================= NOTIFIKASI PESANAN BARU =================
+$notif_pesanan = mysqli_query($conn, " 
+    SELECT COUNT(*) as total_pesanan 
+    FROM order_details 
+    WHERE id_penjual = '$id_penjual' 
+    AND status_detail = 'pending' 
+"); 
 
-// tanggal real time
-$tanggal = date('d');
-$bulan   = date('F Y');
-$hari    = date('l');
+$data_pesanan = mysqli_fetch_assoc($notif_pesanan); 
 
-// ubah hari ke indonesia
-$hari_indo = [
-  'Sunday' => 'Minggu',
-  'Monday' => 'Senin',
-  'Tuesday' => 'Selasa',
-  'Wednesday' => 'Rabu',
-  'Thursday' => 'Kamis',
-  'Friday' => 'Jumat',
-  'Saturday' => 'Sabtu'
-];
-$hari = $hari_indo[$hari];
+$total_notif = $data_pesanan['total_pesanan'] ?? 0;
+
+// TAMBAHKAN INI SUPAYA TIDAK ERROR
+$total_pesanan_baru = $data_pesanan['total_pesanan'] ?? 0;
+
+
+// ================= TOTAL NOTIFIKASI =================
+$total_notif = $total_unread + $total_pesanan_baru;
+
+
+// ================= AMBIL 3 CHAT TERBARU =================
+$recent_chats = mysqli_query($conn, " 
+    SELECT m.*, u.nama as sender_nama 
+    FROM messages m 
+    JOIN users u ON u.id_user = m.sender_id 
+    WHERE m.receiver_id = '$id_penjual' 
+    ORDER BY m.created_at DESC 
+    LIMIT 3 
+"); 
+
+
+// ================= AMBIL 3 PESANAN TERBARU =================
+$recent_orders = mysqli_query($conn, " 
+    SELECT od.*, o.kode_pesanan, u.nama as pembeli 
+    FROM order_details od 
+    JOIN orders o ON od.id_order = o.id_order 
+    JOIN users u ON u.id_user = o.id_pembeli 
+    WHERE od.id_penjual = '$id_penjual' 
+    AND od.status_detail = 'pending' 
+    ORDER BY o.created_at DESC 
+    LIMIT 3 
+"); 
+
+$recent_orders = mysqli_query($conn, " 
+    SELECT od.*, o.kode_pesanan, u.nama as pembeli 
+    FROM order_details od 
+    JOIN orders o ON od.id_order = o.id_order 
+    JOIN users u ON u.id_user = o.id_pembeli 
+    WHERE od.id_penjual = '$id_penjual' 
+    AND od.status_detail = 'pending' 
+    ORDER BY o.created_at DESC 
+    LIMIT 5 
+"); 
+
+
+// ================= AMBIL KATEGORI =================
+$kategori = mysqli_query($conn, "SELECT * FROM kategori ORDER BY id_kategori DESC"); 
+
+
+// ================= TANGGAL =================
+$tanggal = date('d'); 
+$bulan = date('F Y'); 
+$hari = date('l'); 
+
+$hari_indo = [ 
+ 'Sunday' => 'Minggu', 
+ 'Monday' => 'Senin', 
+ 'Tuesday' => 'Selasa', 
+ 'Wednesday' => 'Rabu', 
+ 'Thursday' => 'Kamis', 
+ 'Friday' => 'Jumat', 
+ 'Saturday' => 'Sabtu' 
+]; 
+
+$hari = $hari_indo[$hari]; 
 ?>
 
 
@@ -188,14 +233,48 @@ $hari = $hari_indo[$hari];
       </div>
 
       <div class="flex items-center gap-4">
-        <!-- Search Bar -->
-        <div class="relative">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <i class="fas fa-search text-gray-400"></i>
-          </div>
-          <input type="text" placeholder="Cari produk, pesanan..."
-            class="pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-64">
-        </div>
+
+        <?php if (mysqli_num_rows($recent_orders) > 0): ?>
+
+<?php while($order = mysqli_fetch_assoc($recent_orders)): ?>
+
+<a href="approve.php"
+   class="block p-4 border-b hover:bg-green-50 transition">
+
+<div class="flex items-start gap-3">
+
+<div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+<i class="fas fa-shopping-cart text-green-600"></i>
+</div>
+
+<div class="flex-1">
+<h4 class="font-medium text-gray-900">
+Pesanan Baru
+</h4>
+
+<p class="text-sm text-gray-600">
+<?= htmlspecialchars($order['pembeli']) ?> memesan
+<b><?= htmlspecialchars($order['nama_buku']) ?></b>
+</p>
+
+<span class="text-xs text-green-600">
+Kode: <?= $order['kode_pesanan'] ?>
+</span>
+</div>
+
+</div>
+
+</a>
+
+<?php endwhile; ?>
+
+<?php else: ?>
+
+<div class="p-6 text-center text-gray-500">
+Tidak ada pesanan baru
+</div>
+
+<?php endif; ?>
 
         <!-- Notification Bell -->
         <div class="relative">
@@ -215,7 +294,7 @@ $hari = $hari_indo[$hari];
                 <h3 class="font-semibold text-gray-800">Notifikasi</h3>
                 <?php if ($total_unread > 0): ?>
                   <span class="text-xs bg-indigo-100 text-indigo-600 px-2 py-1 rounded-full font-medium">
-                    <?= $total_unread ?> baru
+                    <?= $total_notif ?> baru
                   </span>
                 <?php endif; ?>
               </div>
