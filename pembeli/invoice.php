@@ -2,6 +2,11 @@
 session_start();
 require '../auth/connection.php';
 
+// Cegah cache browser
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
+
 // Validasi session dan parameter
 if (!isset($_SESSION['id_user'])) {
     header("Location: ../index.php");
@@ -10,6 +15,7 @@ if (!isset($_SESSION['id_user'])) {
 
 $id_user = $_SESSION['id_user'];
 $id_order = $_GET['id_order'] ?? null;
+$metode_pembayaran = $order['metode_pembayaran'] ?? '';
 
 if (!$id_order) {
     header("Location: status.php");
@@ -278,6 +284,63 @@ function e($string) {
                     </div>
                 </div>
 
+                <!-- INFORMASI PEMBAYARAN -->
+<div class="mt-4 bg-slate-700/40 rounded-xl p-4">
+
+<p class="text-xs text-slate-400 mb-2">Metode Pembayaran</p>
+
+<p class="text-sm font-semibold text-white capitalize">
+<?= e($order['metode_pembayaran']) ?>
+</p>
+
+<?php if($order['metode_pembayaran'] == 'cash'): ?>
+
+<div class="mt-3 text-sm">
+<p class="text-slate-300">
+Uang Bayar :
+<span class="font-semibold text-white">
+Rp <?= number_format($order['uang_bayar'],0,',','.') ?>
+</span>
+</p>
+
+<p class="text-slate-300">
+Kembalian :
+<span class="font-semibold text-green-400">
+Rp <?= number_format($order['kembalian'],0,',','.') ?>
+</span>
+</p>
+</div>
+
+<?php endif; ?>
+
+<?php if($order['metode_pembayaran'] == 'cod'): ?>
+
+<p class="text-xs text-amber-300 mt-2">
+💰 Pembayaran dilakukan kepada kurir saat pesanan diterima
+</p>
+
+<?php endif; ?>
+
+<?php if($order['metode_pembayaran'] == 'transfer'): ?>
+
+<p class="text-xs text-blue-300 mt-2">
+🏦 Pembayaran melalui transfer bank
+</p>
+
+<?php endif; ?>
+
+<?php if($order['metode_pembayaran'] == 'qris'): ?>
+
+<p class="text-xs text-purple-300 mt-2">
+📱 Pembayaran melalui QRIS
+</p>
+
+<?php endif; ?>
+
+</div>
+
+
+
                 <!-- Form Upload Bukti untuk Status Pending -->
                 
                 <!-- Alamat Pengiriman -->
@@ -338,7 +401,7 @@ function e($string) {
                     <div class="bg-amber-900/30 border border-amber-800/50 rounded-lg p-3 mb-3">
                         <p class="text-xs text-amber-200 text-center">
                             <i class="fas fa-info-circle mr-1"></i>
-                            Transfer tepat sesuai nominal di atas dan upload bukti pembayaran
+                            Pembayaran tepat sesuai nominal di atas dan upload bukti pembayaran
                         </p>
                     </div>
                     <?php endif; ?>
@@ -449,28 +512,33 @@ function e($string) {
                 </div>
                 <?php endif; ?>
 
-                <?php if ($status == 'pending'): ?>
-                <div class="mt-6 bg-white rounded-2xl p-6 border border-slate-200">
-                    <h3 class="text-lg font-bold text-slate-800 mb-4">Upload Bukti Transfer (Per Penjual)</h3>
+                <?php if ($status == 'pending' && ($metode_pembayaran == 'transfer' || $metode_pembayaran == 'qris')): ?>
+<div class="mt-6 bg-white rounded-2xl p-6 border border-slate-200">
+    <h3 class="text-lg font-bold text-slate-800 mb-4">
+        Upload Bukti Transfer (Per Penjual)
+    </h3>
 
-                    <?php foreach ($penjualList as $id_penjual => $nama_penjual): ?>
-                    <div class="mb-4 p-4 rounded-xl border border-slate-200">
-                        <p class="font-semibold text-slate-800 mb-2">Untuk Penjual: <?= e($nama_penjual) ?></p>
+    <?php foreach ($penjualList as $id_penjual => $nama_penjual): ?>
+    <div class="mb-4 p-4 rounded-xl border border-slate-200">
+        <p class="font-semibold text-slate-800 mb-2">
+            Untuk Penjual: <?= e($nama_penjual) ?>
+        </p>
 
-                        <form action="../auth/proses-upload.php" method="post" enctype="multipart/form-data">
-                            <input type="hidden" name="id_order" value="<?= e($id_order) ?>">
-                            <input type="hidden" name="id_penjual" value="<?= e($id_penjual) ?>">
+        <form action="../auth/proses-upload.php" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="id_order" value="<?= e($id_order) ?>">
+            <input type="hidden" name="id_penjual" value="<?= e($id_penjual) ?>">
 
-                            <input type="file" name="bukti" accept="image/*" required class="w-full mb-3">
-                            <button type="submit"
-                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl">
-                                Upload Bukti untuk <?= e($nama_penjual) ?>
-                            </button>
-                        </form>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-                <?php endif; ?>
+            <input type="file" name="bukti" accept="image/*" required class="w-full mb-3">
+
+            <button type="submit"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl">
+                Upload Bukti untuk <?= e($nama_penjual) ?>
+            </button>
+        </form>
+    </div>
+    <?php endforeach; ?>
+</div>
+<?php endif; ?>
 
                 
                 <!-- Pesan Terima Kasih -->

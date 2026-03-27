@@ -2,9 +2,14 @@
 session_start();
 require '../auth/connection.php';
 
+// Cegah cache browser
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
+
 // CEGAH AKSES SELAIN PENJUAL
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'penjual') {
-    header("Location: ../login.php");
+    header("Location: ../index.php");
     exit;
 }
 
@@ -141,6 +146,10 @@ $totalProdukAktif = $produkAktif['total_produk'] ?? 0;
             <i class="fas fa-box-open w-5 text-emerald-500"></i>
             <span>Produk</span>
         </a>
+
+        <a href="kategori.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
+                    <i class="fas fa-tags w-5"></i> Kategori
+                </a>
         
         <div class="border border-gray-100 rounded-xl mt-4">
             <button onclick="toggleApprove()" class="w-full flex items-center justify-between px-4 py-3 text-gray-700 hover:bg-indigo-50 rounded-xl transition-colors duration-200">

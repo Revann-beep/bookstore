@@ -2,9 +2,14 @@
 session_start();
 require '../auth/connection.php';
 
+// Cegah cache browser
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
+
 /* ===================== CEK LOGIN & ROLE ===================== */
 if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'penjual') {
-    header("Location: ../login.php");
+    header("Location: ../index.php");
     exit;
 }
 

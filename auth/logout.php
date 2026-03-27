@@ -1,20 +1,22 @@
 <?php
 session_start();
+require 'connection.php';
 
-/*
-  Jika kamu pakai status online/offline di database,
-  aktifkan bagian ini
-// */
- require 'connection.php';
- if (isset($_SESSION['id_user'])) {
-     $id = $_SESSION['id_user'];
-     mysqli_query($conn, "UPDATE users SET status='offline' WHERE id_user='$id'");
- }
+// Jika user login ubah status offline
+if (isset($_SESSION['id_user'])) {
+    $id = $_SESSION['id_user'];
+    mysqli_query($conn, "UPDATE users SET status='offline' WHERE id_user='$id'");
+}
 
 // Hapus semua session
-session_unset();
+$_SESSION = [];
 session_destroy();
 
-// Redirect ke halaman login
+// Buat session baru
+session_start();
+session_regenerate_id(true);
+
+// Redirect ke login
 header("Location: ../index.php");
-exit;
+exit();
+?>

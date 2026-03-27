@@ -83,10 +83,42 @@ while ($c = mysqli_fetch_assoc($cartQ)) {
 
 if (isset($_POST['checkout'])) {
 
-    $metode = $_POST['metode'] ?? '';
-    if (!in_array($metode, ['transfer', 'qris'])) {
-        die('Metode pembayaran tidak valid');
+      $metode = strtolower(trim($_POST['metode'] ?? ''));
+      $uang_bayar = $_POST['uang_bayar'] ?? 0;
+      $kembalian = 0;
+
+      /* =====================
+        STATUS OTOMATIS
+      ===================== */
+
+    if(in_array($metode, ['cod','cash'])){
+    $status_order = 'menunggu_verifikasi';
+    }else{
+        $status_order = 'pending';
     }
+
+      if (!in_array($metode, ['transfer','qris','cod','cash'])) {
+          die('Metode pembayaran tidak valid');
+      }
+
+      /* =====================
+        LOGIKA PEMBAYARAN
+      ===================== */
+
+      if($metode == 'cash'){
+
+          if($uang_bayar < $total_penjualan){
+              die("Uang bayar tidak cukup");
+          }
+
+          $kembalian = $uang_bayar - $total_penjualan;
+
+      }else{
+
+          $uang_bayar = 0;
+          $kembalian = 0;
+
+      }
 
     foreach ($itemsPerPenjual as $id_penjual => $items) {
 
@@ -105,9 +137,9 @@ if (isset($_POST['checkout'])) {
         // ======================
         mysqli_query($conn, "
             INSERT INTO orders
-            (kode_pesanan, id_pembeli, total_harga, total_modal, status, metode_pembayaran, bukti_tf, created_at)
-            VALUES
-            ('$kode_pesanan', '$id_user', '$total_penjual', '$total_modal', 'pending', '$metode', '', NOW())
+(kode_pesanan, id_pembeli, total_harga, total_modal, status, metode_pembayaran, uang_bayar, kembalian, bukti_tf, created_at)
+VALUES
+('$kode_pesanan', '$id_user', '$total_penjual', '$total_modal', '$status_order', '$metode', '$uang_bayar', '$kembalian', '', NOW())
         ") or die(mysqli_error($conn));
 
         $id_order = mysqli_insert_id($conn);
@@ -184,12 +216,14 @@ if (isset($_POST['checkout'])) {
     <option value="">-- Pilih Metode --</option>
     <option value="transfer">Transfer Bank</option>
     <option value="qris">QRIS</option>
+    <option value="cod">Cash on Delivery (COD)</option>
+    <option value="cash">Bayar Tunai (di tempat)</option>
   </select>
 </div>
 
 <!-- TRANSFER -->
 <div id="transferBox" class="hidden bg-white rounded-xl shadow p-6 mb-6 space-y-4">
-<?php foreach ($pembayaran as $p): ?>
+  <?php foreach ($pembayaran as $p): ?>
   <div class="border rounded-xl p-4">
     <p class="font-semibold"><?= $p['nama_toko'] ?></p>
     <p class="text-sm text-gray-600">
@@ -200,7 +234,7 @@ if (isset($_POST['checkout'])) {
       Rp <?= number_format($p['total'],0,',','.') ?>
     </p>
   </div>
-<?php endforeach; ?>
+  <?php endforeach; ?>
 </div>
 
 <!-- QRIS -->
@@ -216,7 +250,51 @@ if (isset($_POST['checkout'])) {
 <?php endforeach; ?>
 </div>
 
+<!-- CASH -->
+<!-- CASH -->
 
+<div id="cashBox" class="hidden bg-white rounded-xl shadow p-6 mb-6">
+
+<p class="font-semibold mb-2">Pembayaran Cash</p>
+
+<input
+type="number"
+name="uang_bayar"
+id="uang_bayar"
+placeholder="Masukkan uang bayar"
+class="w-full border rounded-xl px-4 py-3"
+oninput="hitungKembalian()"
+
+>
+
+<div class="mt-3">
+<label class="text-sm text-gray-600">Kembalian</label>
+<input 
+type="text"
+id="kembalian"
+readonly
+class="w-full border rounded-xl px-4 py-3 bg-gray-100"
+placeholder="0"
+>
+</div>
+
+<p class="text-sm text-gray-500 mt-2">
+Pembayaran dilakukan langsung saat transaksi
+</p>
+
+</div>
+
+
+<!-- COD -->
+<div id="codBox" class="hidden bg-white rounded-xl shadow p-6 mb-6">
+
+<p class="font-semibold">COD (Cash On Delivery)</p>
+
+<p class="text-gray-600 text-sm">
+Pembayaran dilakukan kepada kurir saat pesanan sampai.
+</p>
+
+</div>
 
 
 <div class="flex gap-3">
@@ -226,9 +304,10 @@ if (isset($_POST['checkout'])) {
   </a>
 
   <button type="submit" name="checkout"
-    class="w-1/2 bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 rounded-xl">
-    Konfirmasi Pesanan
-  </button>
+onclick="return cekPembayaran()"
+class="w-1/2 bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 rounded-xl">
+Konfirmasi Pesanan
+</button>
 </div>
 
 </form>
@@ -236,19 +315,71 @@ if (isset($_POST['checkout'])) {
 
 <script>
 function toggleMetode(val){
-  document.getElementById('transferBox').classList.add('hidden');
-  document.getElementById('qrisBox').classList.add('hidden');
- 
 
-  if(val==='transfer'){
-    document.getElementById('transferBox').classList.remove('hidden');
-    document.getElementById('uploadBox').classList.remove('hidden');
-  }
+document.getElementById('transferBox').classList.add('hidden');
+document.getElementById('qrisBox').classList.add('hidden');
+document.getElementById('cashBox').classList.add('hidden');
+document.getElementById('codBox').classList.add('hidden');
 
-  if(val==='qris'){
-    document.getElementById('qrisBox').classList.remove('hidden');
-  }
+if(val==='transfer'){
+document.getElementById('transferBox').classList.remove('hidden');
 }
+
+if(val==='qris'){
+document.getElementById('qrisBox').classList.remove('hidden');
+}
+
+if(val==='cash'){
+document.getElementById('cashBox').classList.remove('hidden');
+}
+
+if(val==='cod'){
+document.getElementById('codBox').classList.remove('hidden');
+}
+
+}
+
+function hitungKembalian(){
+
+let uang = document.getElementById('uang_bayar').value;
+let kembali = uang - totalBelanja;
+
+if(uang === ''){
+document.getElementById('kembalian').value = '';
+return;
+}
+
+if(kembali < 0){
+document.getElementById('kembalian').value = "Uang kurang";
+}else{
+document.getElementById('kembalian').value = "Rp " + kembali.toLocaleString('id-ID');
+}
+
+}
+
+function cekPembayaran(){
+
+let metode = document.querySelector('[name="metode"]').value;
+
+if(metode === 'cash'){
+
+let uang = document.getElementById('uang_bayar').value;
+
+if(uang < totalBelanja){
+alert("Uang bayar tidak cukup!");
+return false;
+}
+
+}
+
+return true;
+
+}
+
+</script>
+
+<script>
+let totalBelanja = <?= $total_penjualan ?>;
 </script>
 
 </body>

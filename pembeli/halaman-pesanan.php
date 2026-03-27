@@ -2,7 +2,10 @@
 session_start();
 require '../auth/connection.php';
 
-
+// Cegah cache browser
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
 
 /* AMBIL DATA PRODUK + ID PENJUAL */
 $search = $_GET['search'] ?? '';
@@ -323,25 +326,66 @@ if ($produkCount > 0):
 <?php if ($p['stok'] > 0) : ?>
   <div class="flex gap-2 mt-4">
 
-    <!-- PESAN -->
-    <a href="../auth/add-keranjang.php?id=<?= $p['id_produk']; ?>"
-       class="flex-1 text-center bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white py-3 rounded-xl font-semibold transition-all duration-300 shadow hover:shadow-lg flex items-center justify-center gap-2">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-        <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
-      </svg>
-      Pesan
-    </a>
+<!-- PESAN -->
+<a href="../auth/add-keranjang.php?id=<?= $p['id_produk']; ?>"
+   class="flex-1 text-center bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white py-3 rounded-xl font-semibold transition-all duration-300 shadow hover:shadow-lg flex items-center justify-center gap-2">
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+    <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3z"/>
+  </svg>
+  Pesan
+</a>
 
-    <!-- CHAT PENJUAL -->
-    <a href="pesan.php?id_penjual=<?= $p['id_penjual']; ?>&id_produk=<?= $p['id_produk']; ?>"
-       class="w-12 flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl shadow hover:shadow-lg transition-all duration-300"
-       title="Chat Penjual">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clip-rule="evenodd" />
-      </svg>
-    </a>
+<!-- ICON LIHAT DETAIL -->
+<a href="detail-buku.php?id=<?= $p['id_produk']; ?>"
+   class="w-12 flex items-center justify-center bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl shadow hover:shadow-lg transition-all duration-300"
+   title="Lihat Detail Buku">
 
-  </div>
+  <svg xmlns="http://www.w3.org/2000/svg"
+       class="h-5 w-5"
+       fill="none"
+       viewBox="0 0 24 24"
+       stroke="currentColor">
+
+    <path stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+
+    <path stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M2.458 12C3.732 7.943
+             7.523 5 12 5
+             c4.478 0 8.268 2.943
+             9.542 7
+             -1.274 4.057
+             -5.064 7
+             -9.542 7
+             -4.477 0
+             -8.268-2.943
+             -9.542-7z"/>
+  </svg>
+
+</a>
+
+<!-- CHAT PENJUAL -->
+<a href="pesan.php?id_penjual=<?= $p['id_penjual']; ?>&id_produk=<?= $p['id_produk']; ?>"
+   class="w-12 flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl shadow hover:shadow-lg transition-all duration-300"
+   title="Chat Penjual">
+
+  <svg xmlns="http://www.w3.org/2000/svg"
+       class="h-5 w-5"
+       viewBox="0 0 20 20"
+       fill="currentColor">
+
+    <path fill-rule="evenodd"
+      d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2z"
+      clip-rule="evenodd"/>
+  </svg>
+
+</a>
+
+</div>
 <?php else : ?>
   <button class="w-full mt-4 bg-slate-300 text-slate-600 py-3 rounded-xl cursor-not-allowed font-semibold flex items-center justify-center gap-2">
     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">

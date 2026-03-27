@@ -2,9 +2,14 @@
 session_start();
 require '../auth/connection.php';
 
+// Cegah cache browser
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
+
 // CEGAH AKSES SELAIN PENJUAL
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'penjual') {
-    header("Location: ../login.php");
+    header("Location: ../index.php");
     exit;
 }
 
@@ -74,6 +79,9 @@ function getStatus($last_activity, $status) {
                 </a>
                 <a href="produk.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
                     <i class="fas fa-box-open w-5"></i> Produk
+                </a>
+                <a href="kategori.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
+                    <i class="fas fa-tags w-5"></i> Kategori
                 </a>
                 <a href="approve.php" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-indigo-50">
                     <i class="fas fa-check-circle w-5"></i> Approve
