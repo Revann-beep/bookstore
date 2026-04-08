@@ -4,7 +4,7 @@ require '../auth/connection.php';
 
 $id_user = $_SESSION['id_user'] ?? null;
 if (!$id_user) {
-    header("Location: ../auth/login.php");
+    header("Location: ../index.php");
     exit;
 }
 

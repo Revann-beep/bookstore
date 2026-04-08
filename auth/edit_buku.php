@@ -4,7 +4,7 @@
 
     // CEGAH AKSES SELAIN PENJUAL
     if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'penjual') {
-        header("Location: ../login.php");
+        header("Location: ../index.php");
         exit;
     }
 
